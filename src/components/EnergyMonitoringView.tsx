@@ -328,111 +328,76 @@ export function EnergyMonitoringView({
         </div>
       </div>
 
-      {/* Battery Voltage History Chart & Power Topology */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        <div className="lg:col-span-2 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-6 space-y-4">
-          <div className="flex items-center justify-between">
-            <div>
-              <h3 className="font-bold text-base text-slate-900 dark:text-white">
-                Grafik Riwayat Tegangan Baterai 12V 7Ah
-              </h3>
-              <p className="text-xs text-slate-500">
-                Pemantauan kestabilan suplai daya untuk ESP32 & Modem 4G
-              </p>
-            </div>
-            {isDemo && (
-              <span className="px-2 py-0.5 text-[10px] font-bold rounded bg-amber-500/20 text-amber-500 border border-amber-500/40">
-                DEMO
-              </span>
-            )}
+      {/* Battery Voltage History Chart */}
+      <div className="rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-6 space-y-4">
+        <div className="flex items-center justify-between">
+          <div>
+            <h3 className="font-bold text-base text-slate-900 dark:text-white">
+              Grafik Riwayat Tegangan Baterai 12V 7Ah
+            </h3>
+            <p className="text-xs text-slate-500">
+              Pemantauan kestabilan suplai daya untuk ESP32 & Modem 4G
+            </p>
           </div>
-          <div className="h-64 w-full">
-            {chartData.length > 0 && batteryVoltage !== null ? (
-              <ResponsiveContainer width="100%" height="100%">
-                <AreaChart data={chartData}>
-                  <defs>
-                    <linearGradient id="battGrad" x1="0" y1="0" x2="0" y2="1">
-                      <stop
-                        offset="5%"
-                        stopColor="#3383f5"
-                        stopOpacity={0.35}
-                      />
-                      <stop offset="95%" stopColor="#3383f5" stopOpacity={0} />
-                    </linearGradient>
-                  </defs>
-                  <CartesianGrid
-                    strokeDasharray="3 3"
-                    stroke="#3a4a61"
-                    opacity={0.2}
-                  />
-                  <XAxis
-                    dataKey="time"
-                    tick={{ fontSize: 11 }}
-                    stroke="#62758f"
-                  />
-                  <YAxis
-                    domain={[10.5, 14.5]}
-                    tick={{ fontSize: 11 }}
-                    stroke="#62758f"
-                  />
-                  <Tooltip
-                    contentStyle={{
-                      backgroundColor: "#202c3d",
-                      borderColor: "#3a4a61",
-                      color: "#f8fafc",
-                      borderRadius: "10px",
-                    }}
-                  />
-                  <Area
-                    type="monotone"
-                    dataKey="battery_voltage"
-                    name="Battery Voltage (V)"
-                    stroke="#3383f5"
-                    strokeWidth={2.5}
-                    fill="url(#battGrad)"
-                  />
-                </AreaChart>
-              </ResponsiveContainer>
-            ) : (
-              <div className="h-full rounded-xl bg-slate-100 dark:bg-slate-800/50 border border-dashed border-slate-300 dark:border-slate-700 flex items-center justify-center text-sm text-slate-500">
-                Tidak ada data tegangan baterai (System Offline / Sensor Not
-                Available).
-              </div>
-            )}
-          </div>
+          {isDemo && (
+            <span className="px-2 py-0.5 text-[10px] font-bold rounded bg-amber-500/20 text-amber-500 border border-amber-500/40">
+              DEMO
+            </span>
+          )}
         </div>
-
-        {/* Power Distribution Architecture */}
-        <div className="rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-6 space-y-4">
-          <h3 className="font-bold text-base text-slate-900 dark:text-white">
-            Topologi Distribusi Daya Surya
-          </h3>
-          <div className="space-y-2.5 text-xs">
-            <div className="p-3 rounded-xl bg-slate-50 dark:bg-slate-800/70 border border-slate-200 dark:border-slate-700 flex items-center justify-between">
-              <span className="font-semibold">1. Panel Surya 10 Wp</span>
-              <span className="text-emerald-500 font-mono">Input PV</span>
+        <div className="h-64 w-full">
+          {chartData.length > 0 && batteryVoltage !== null ? (
+            <ResponsiveContainer width="100%" height="100%">
+              <AreaChart data={chartData}>
+                <defs>
+                  <linearGradient id="battGrad" x1="0" y1="0" x2="0" y2="1">
+                    <stop
+                      offset="5%"
+                      stopColor="#3383f5"
+                      stopOpacity={0.35}
+                    />
+                    <stop offset="95%" stopColor="#3383f5" stopOpacity={0} />
+                  </linearGradient>
+                </defs>
+                <CartesianGrid
+                  strokeDasharray="3 3"
+                  stroke="#3a4a61"
+                  opacity={0.2}
+                />
+                <XAxis
+                  dataKey="time"
+                  tick={{ fontSize: 11 }}
+                  stroke="#62758f"
+                />
+                <YAxis
+                  domain={[10.5, 14.5]}
+                  tick={{ fontSize: 11 }}
+                  stroke="#62758f"
+                />
+                <Tooltip
+                  contentStyle={{
+                    backgroundColor: "#202c3d",
+                    borderColor: "#3a4a61",
+                    color: "#f8fafc",
+                    borderRadius: "10px",
+                  }}
+                />
+                <Area
+                  type="monotone"
+                  dataKey="battery_voltage"
+                  name="Battery Voltage (V)"
+                  stroke="#3383f5"
+                  strokeWidth={2.5}
+                  fill="url(#battGrad)"
+                />
+              </AreaChart>
+            </ResponsiveContainer>
+          ) : (
+            <div className="h-full rounded-xl bg-slate-100 dark:bg-slate-800/50 border border-dashed border-slate-300 dark:border-slate-700 flex items-center justify-center text-sm text-slate-500">
+              Tidak ada data tegangan baterai (System Offline / Sensor Not
+              Available).
             </div>
-            <div className="p-3 rounded-xl bg-slate-50 dark:bg-slate-800/70 border border-slate-200 dark:border-slate-700 flex items-center justify-between">
-              <span className="font-semibold">2. Solar Charge Controller</span>
-              <span className="text-emerald-500 font-mono">PWM 12V</span>
-            </div>
-            <div className="p-3 rounded-xl bg-slate-50 dark:bg-slate-800/70 border border-slate-200 dark:border-slate-700 flex items-center justify-between">
-              <span className="font-semibold">3. Baterai Utama</span>
-              <span className="text-emerald-500 font-mono">12V 7Ah VRLA</span>
-            </div>
-            <div className="p-3 rounded-xl bg-slate-50 dark:bg-slate-800/70 border border-slate-200 dark:border-slate-700 flex items-center justify-between">
-              <span className="font-semibold">4. Proteksi & Distribusi</span>
-              <span className="text-emerald-500 font-mono">Sekering + Bus</span>
-            </div>
-            <div className="p-3 rounded-xl bg-slate-50 dark:bg-slate-800/70 border border-slate-200 dark:border-slate-700 flex items-center justify-between">
-              <span className="font-semibold">5. DC-DC Buck Converter</span>
-              <span className="text-emerald-500 font-mono">12V → 5V</span>
-            </div>
-            <div className="p-3 rounded-xl bg-emerald-500/10 border border-emerald-500/30 flex items-center justify-between text-emerald-700 dark:text-emerald-300">
-              <span className="font-bold">6. Beban Sistem IoT</span>
-              <span className="font-mono">ESP32 + 4G + Sensor</span>
-            </div>
-          </div>
+          )}
         </div>
       </div>
     </div>

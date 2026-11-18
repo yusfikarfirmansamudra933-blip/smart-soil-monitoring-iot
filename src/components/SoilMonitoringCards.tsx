@@ -8,7 +8,6 @@ import {
   Clock,
   Droplets,
   FlaskConical,
-  Gauge,
   Sliders,
   Thermometer,
   Unplug,
@@ -29,11 +28,9 @@ import {
 } from "@/lib/types";
 import {
   convertDmsRawToPercent,
-  DMS_INTERFACE_OPTIONS,
   evaluateMoistureCategory,
   evaluatePhCategory,
   evaluateTemperatureCategory,
-  PH_INTERFACE_OPTIONS,
 } from "@/lib/sensor-drivers";
 
 interface SoilMonitoringProps {
@@ -712,130 +709,69 @@ export function SoilMonitoringCards({
 
       {/* Detailed View section when user is on "Soil Monitoring" menu */}
       {detailedView && (
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          <div className="rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-6 space-y-4">
+        <div className="rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-6 space-y-4">
+          <div className="flex items-center justify-between">
             <div className="flex items-center gap-2.5">
-              <Gauge className="w-5 h-5 text-emerald-500" />
+              <Activity className="w-5 h-5 text-emerald-500" />
               <h3 className="font-bold text-lg text-slate-900 dark:text-white">
-                Arsitektur Driver Sensor Modular
+                Log Pembacaan Sensor Tanah Terbaru
               </h3>
             </div>
-            <p className="text-sm text-slate-600 dark:text-slate-300 leading-relaxed">
-              Sesuai ketentuan teknis, sistem ini <strong>tidak</strong>{" "}
-              menggunakan Capacitive Soil Moisture Sensor maupun sensor pH
-              cairan PH-4502C, serta tidak mengasumsikan protokol komunikasi
-              sebelum pemeriksaan datasheet.
-            </p>
-            <div className="space-y-3 text-xs">
-              <div className="p-3.5 rounded-xl bg-slate-50 dark:bg-slate-800/70 border border-slate-200 dark:border-slate-700">
-                <div className="font-bold text-slate-900 dark:text-white mb-1">
-                  1. Driver Sensor pH Tanah (Saat ini:{" "}
-                  <span className="text-emerald-500 font-mono">
-                    {config.ph_interface_mode}
-                  </span>
-                  )
-                </div>
-                <p className="text-slate-500 dark:text-slate-400">
-                  {
-                    PH_INTERFACE_OPTIONS.find(
-                      (o) => o.value === config.ph_interface_mode
-                    )?.description
-                  }
-                </p>
-              </div>
-              <div className="p-3.5 rounded-xl bg-slate-50 dark:bg-slate-800/70 border border-slate-200 dark:border-slate-700">
-                <div className="font-bold text-slate-900 dark:text-white mb-1">
-                  2. Driver Sensor DMS (Saat ini:{" "}
-                  <span className="text-emerald-500 font-mono">
-                    {config.dms_interface_mode}
-                  </span>
-                  )
-                </div>
-                <p className="text-slate-500 dark:text-slate-400">
-                  {
-                    DMS_INTERFACE_OPTIONS.find(
-                      (o) => o.value === config.dms_interface_mode
-                    )?.description
-                  }
-                </p>
-              </div>
-              <div className="p-3.5 rounded-xl bg-slate-50 dark:bg-slate-800/70 border border-slate-200 dark:border-slate-700">
-                <div className="font-bold text-slate-900 dark:text-white mb-1">
-                  3. Driver DS18B20 Waterproof (OneWire Digital)
-                </div>
-                <p className="text-slate-500 dark:text-slate-400">
-                  Menggunakan protokol 1-Wire dengan deteksi otomatis{" "}
-                  <code>DEVICE_DISCONNECTED_C (-127°C)</code> yang langsung
-                  mengubah status menjadi <strong>Sensor Not Connected</strong>.
-                </p>
-              </div>
-            </div>
+            {isDemo && (
+              <span className="px-2.5 py-1 text-xs font-bold rounded bg-amber-500/20 text-amber-500 border border-amber-500/30">
+                DATA SIMULASI DEMO
+              </span>
+            )}
           </div>
-
-          <div className="rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-6 space-y-4">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2.5">
-                <Activity className="w-5 h-5 text-emerald-500" />
-                <h3 className="font-bold text-lg text-slate-900 dark:text-white">
-                  Log Pembacaan Sensor Tanah Terbaru
-                </h3>
-              </div>
-              {isDemo && (
-                <span className="px-2.5 py-1 text-xs font-bold rounded bg-amber-500/20 text-amber-500 border border-amber-500/30">
-                  DATA SIMULASI DEMO
-                </span>
-              )}
-            </div>
-            <div className="overflow-x-auto">
-              <table className="w-full text-left text-xs">
-                <thead>
-                  <tr className="border-b border-slate-200 dark:border-slate-800 text-slate-500">
-                    <th className="py-2.5 pr-3">Waktu</th>
-                    <th className="py-2.5 px-3">Soil pH</th>
-                    <th className="py-2.5 px-3">DMS Raw</th>
-                    <th className="py-2.5 px-3">Moisture (%)</th>
-                    <th className="py-2.5 pl-3">Suhu (°C)</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-slate-100 dark:divide-slate-800/70">
-                  {recentRows.length > 0 ? (
-                    recentRows.map((row, i) => (
-                      <tr key={i} className="hover:bg-slate-50 dark:hover:bg-slate-800/40">
-                        <td className="py-2.5 pr-3 font-mono text-slate-500">
-                          {formatTime(row.ts)}
-                        </td>
-                        <td className="py-2.5 px-3 font-semibold">
-                          {row.soil_ph !== null ? row.soil_ph.toFixed(2) : "Not Connected"}
-                        </td>
-                        <td className="py-2.5 px-3 font-mono">
-                          {row.soil_dms_raw !== null ? row.soil_dms_raw : "Not Connected"}
-                        </td>
-                        <td className="py-2.5 px-3 font-semibold text-emerald-600 dark:text-emerald-400">
-                          {config.dms_calibrated && row.soil_moisture !== null
-                            ? `${row.soil_moisture.toFixed(1)}%`
-                            : "Raw Only"}
-                        </td>
-                        <td className="py-2.5 pl-3 font-semibold">
-                          {row.soil_temperature !== null
-                            ? `${row.soil_temperature.toFixed(1)} °C`
-                            : "Not Connected"}
-                        </td>
-                      </tr>
-                    ))
-                  ) : (
-                    <tr>
-                      <td
-                        colSpan={5}
-                        className="py-8 text-center text-slate-500"
-                      >
-                        <AlertCircle className="w-5 h-5 mx-auto mb-1 text-slate-400" />
-                        Belum ada data pengukuran dari perangkat keras.
+          <div className="overflow-x-auto">
+            <table className="w-full text-left text-xs">
+              <thead>
+                <tr className="border-b border-slate-200 dark:border-slate-800 text-slate-500">
+                  <th className="py-2.5 pr-3">Waktu</th>
+                  <th className="py-2.5 px-3">Soil pH</th>
+                  <th className="py-2.5 px-3">DMS Raw</th>
+                  <th className="py-2.5 px-3">Moisture (%)</th>
+                  <th className="py-2.5 pl-3">Suhu (°C)</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-slate-100 dark:divide-slate-800/70">
+                {recentRows.length > 0 ? (
+                  recentRows.map((row, i) => (
+                    <tr key={i} className="hover:bg-slate-50 dark:hover:bg-slate-800/40">
+                      <td className="py-2.5 pr-3 font-mono text-slate-500">
+                        {formatTime(row.ts)}
+                      </td>
+                      <td className="py-2.5 px-3 font-semibold">
+                        {row.soil_ph !== null ? row.soil_ph.toFixed(2) : "Not Connected"}
+                      </td>
+                      <td className="py-2.5 px-3 font-mono">
+                        {row.soil_dms_raw !== null ? row.soil_dms_raw : "Not Connected"}
+                      </td>
+                      <td className="py-2.5 px-3 font-semibold text-emerald-600 dark:text-emerald-400">
+                        {config.dms_calibrated && row.soil_moisture !== null
+                          ? `${row.soil_moisture.toFixed(1)}%`
+                          : "Raw Only"}
+                      </td>
+                      <td className="py-2.5 pl-3 font-semibold">
+                        {row.soil_temperature !== null
+                          ? `${row.soil_temperature.toFixed(1)} °C`
+                          : "Not Connected"}
                       </td>
                     </tr>
-                  )}
-                </tbody>
-              </table>
-            </div>
+                  ))
+                ) : (
+                  <tr>
+                    <td
+                      colSpan={5}
+                      className="py-8 text-center text-slate-500"
+                    >
+                      <AlertCircle className="w-5 h-5 mx-auto mb-1 text-slate-400" />
+                      Belum ada data pengukuran dari perangkat keras.
+                    </td>
+                  </tr>
+                )}
+              </tbody>
+            </table>
           </div>
         </div>
       )}

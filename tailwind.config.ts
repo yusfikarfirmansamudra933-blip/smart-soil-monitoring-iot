@@ -1,7 +1,7 @@
 import type { Config } from "tailwindcss";
 
 /**
- * INDUSTRIAL BLUE-STEEL THEME
+ * CLEAN BLUE-STEEL THEME
  * ---------------------------------------------------------------
  * - Mode gelap : abu-biru (steel blue-gray)
  * - Mode cerah : putih-biru (blue-white)
@@ -59,22 +59,22 @@ const config: Config = {
           "accent-dark": industrialBlue[600],
         },
       },
-      // Sudut lebih tegas ala panel kontrol industri
+      // Sudut lembut namun tetap rapi
       borderRadius: {
-        md: "3px",
-        lg: "4px",
-        xl: "5px",
-        "2xl": "6px",
-        "3xl": "8px",
+        md: "6px",
+        lg: "8px",
+        xl: "10px",
+        "2xl": "14px",
+        "3xl": "18px",
       },
       fontFamily: {
         sans: [
-          "Bahnschrift",
-          "\"DIN Alternate\"",
-          "\"DIN Next\"",
-          "\"Roboto Condensed\"",
+          "\"Segoe UI Variable Text\"",
           "\"Segoe UI\"",
+          "-apple-system",
+          "BlinkMacSystemFont",
           "Roboto",
+          "\"Helvetica Neue\"",
           "system-ui",
           "sans-serif",
         ],
