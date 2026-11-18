@@ -354,31 +354,31 @@ export function EnergyMonitoringView({
                     <linearGradient id="battGrad" x1="0" y1="0" x2="0" y2="1">
                       <stop
                         offset="5%"
-                        stopColor="#10b981"
+                        stopColor="#3383f5"
                         stopOpacity={0.35}
                       />
-                      <stop offset="95%" stopColor="#10b981" stopOpacity={0} />
+                      <stop offset="95%" stopColor="#3383f5" stopOpacity={0} />
                     </linearGradient>
                   </defs>
                   <CartesianGrid
                     strokeDasharray="3 3"
-                    stroke="#334155"
+                    stroke="#3a4a61"
                     opacity={0.2}
                   />
                   <XAxis
                     dataKey="time"
                     tick={{ fontSize: 11 }}
-                    stroke="#64748b"
+                    stroke="#62758f"
                   />
                   <YAxis
                     domain={[10.5, 14.5]}
                     tick={{ fontSize: 11 }}
-                    stroke="#64748b"
+                    stroke="#62758f"
                   />
                   <Tooltip
                     contentStyle={{
-                      backgroundColor: "#0f172a",
-                      borderColor: "#1e293b",
+                      backgroundColor: "#202c3d",
+                      borderColor: "#3a4a61",
                       color: "#f8fafc",
                       borderRadius: "10px",
                     }}
@@ -387,7 +387,7 @@ export function EnergyMonitoringView({
                     type="monotone"
                     dataKey="battery_voltage"
                     name="Battery Voltage (V)"
-                    stroke="#10b981"
+                    stroke="#3383f5"
                     strokeWidth={2.5}
                     fill="url(#battGrad)"
                   />

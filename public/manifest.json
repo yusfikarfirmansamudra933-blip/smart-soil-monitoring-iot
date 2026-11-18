@@ -5,8 +5,8 @@
   "start_url": "/",
   "display": "standalone",
   "orientation": "any",
-  "background_color": "#0f172a",
-  "theme_color": "#059669",
+  "background_color": "#162030",
+  "theme_color": "#1f66e0",
   "categories": ["utilities", "productivity", "agriculture", "iot"],
   "icons": [
     {

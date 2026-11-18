@@ -413,24 +413,28 @@ export default function SmartSoilMonitoringApp() {
   });
 
   return (
-    <div className="min-h-screen flex flex-col lg:flex-row bg-slate-100 dark:bg-slate-950 text-slate-900 dark:text-slate-100">
+    <div className="min-h-screen flex flex-col lg:flex-row bg-transparent text-slate-900 dark:text-slate-100">
       {/* Desktop Sidebar Navigation */}
-      <aside className="hidden lg:flex lg:w-64 lg:flex-col lg:fixed lg:inset-y-0 bg-slate-900 text-slate-100 border-r border-slate-800 z-30 no-print">
-        <div className="p-5 border-b border-slate-800 flex items-center gap-3">
-          <div className="w-10 h-10 rounded-xl bg-emerald-600 flex items-center justify-center shadow-lg shadow-emerald-600/30">
+      <aside className="hidden lg:flex lg:w-64 lg:flex-col lg:fixed lg:inset-y-0 bg-white dark:bg-slate-900 metal-plate text-slate-800 dark:text-slate-100 border-r-2 border-slate-200 dark:border-slate-800 z-30 no-print">
+        <div className="hazard-stripe h-1.5 w-full shrink-0" />
+        <div className="p-5 border-b border-slate-200 dark:border-slate-800 flex items-center gap-3">
+          <div className="w-10 h-10 rounded-lg bg-emerald-600 flex items-center justify-center shadow-lg shadow-emerald-600/30 ring-2 ring-emerald-400/40 ring-offset-2 ring-offset-white dark:ring-offset-slate-900">
             <Sprout className="w-6 h-6 text-white" />
           </div>
           <div>
-            <h1 className="font-extrabold text-sm tracking-wide text-white">
+            <h1 className="font-extrabold text-sm tracking-[0.18em] text-slate-900 dark:text-white">
               SMART SOIL IoT
             </h1>
-            <p className="text-[11px] text-emerald-400 font-medium">
+            <p className="text-[10px] font-mono uppercase tracking-wider text-emerald-600 dark:text-emerald-400 font-medium">
               ESP32 • 4G LTE • Solar
             </p>
           </div>
         </div>
 
-        <nav className="flex-1 p-4 space-y-1.5 overflow-y-auto">
+        <div className="px-5 pt-4 pb-1 text-[10px] font-mono uppercase tracking-[0.2em] text-slate-400 dark:text-slate-500">
+          // Panel Kontrol
+        </div>
+        <nav className="flex-1 px-4 pb-4 space-y-1 overflow-y-auto">
           {NAV_ITEMS.map((item) => {
             const Icon = item.icon;
             const active = activeNav === item.id;
@@ -439,10 +443,10 @@ export default function SmartSoilMonitoringApp() {
                 key={item.id}
                 type="button"
                 onClick={() => setActiveNav(item.id)}
-                className={`w-full flex items-center justify-between px-3.5 py-2.5 rounded-xl text-xs font-bold transition ${
+                className={`w-full flex items-center justify-between px-3.5 py-2.5 rounded-md border-l-4 text-xs font-bold uppercase tracking-wide transition ${
                   active
-                    ? "bg-emerald-600 text-white shadow-md shadow-emerald-600/25"
-                    : "text-slate-400 hover:bg-slate-800/80 hover:text-white"
+                    ? "bg-emerald-600 border-emerald-300 text-white shadow-md shadow-emerald-600/25"
+                    : "border-transparent text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800/80 hover:border-slate-300 dark:hover:border-slate-600 hover:text-slate-900 dark:hover:text-white"
                 }`}
               >
                 <span className="flex items-center gap-3">
@@ -460,34 +464,36 @@ export default function SmartSoilMonitoringApp() {
         </nav>
 
         {/* Sidebar Hardware Summary Footer */}
-        <div className="p-4 m-3 rounded-xl bg-slate-950/90 border border-slate-800 space-y-2 text-[11px]">
+        <div className="p-4 pt-6 m-3 rounded-md bg-slate-100 dark:bg-slate-950/90 border border-slate-200 dark:border-slate-700 space-y-2 text-[11px] font-mono rivets shadow-inner">
           <div className="flex items-center justify-between">
-            <span className="text-slate-400">Status ESP32</span>
+            <span className="text-slate-500 dark:text-slate-400 uppercase">Status ESP32</span>
             <span
-              className={`font-bold ${
+              className={`font-bold flex items-center gap-1.5 ${
                 activeDeviceStatus.esp32_status === "online"
-                  ? "text-emerald-400"
-                  : "text-rose-400"
+                  ? "text-emerald-600 dark:text-emerald-400"
+                  : "text-rose-500 dark:text-rose-400"
               }`}
             >
+              <span className={`w-1.5 h-1.5 rounded-full bg-current ${activeDeviceStatus.esp32_status === "online" ? "led-pulse" : ""}`} />
               {activeDeviceStatus.esp32_status.toUpperCase()}
             </span>
           </div>
           <div className="flex items-center justify-between">
-            <span className="text-slate-400">Jaringan 4G</span>
+            <span className="text-slate-500 dark:text-slate-400 uppercase">Jaringan 4G</span>
             <span
-              className={`font-bold ${
+              className={`font-bold flex items-center gap-1.5 ${
                 activeDeviceStatus.modem_status === "connected"
-                  ? "text-emerald-400"
-                  : "text-rose-400"
+                  ? "text-emerald-600 dark:text-emerald-400"
+                  : "text-rose-500 dark:text-rose-400"
               }`}
             >
+              <span className={`w-1.5 h-1.5 rounded-full bg-current ${activeDeviceStatus.modem_status === "connected" ? "led-pulse" : ""}`} />
               {activeDeviceStatus.modem_status.toUpperCase()}
             </span>
           </div>
           <div className="flex items-center justify-between">
-            <span className="text-slate-400">Database</span>
-            <span className="text-emerald-400 font-mono">Supabase PG17</span>
+            <span className="text-slate-500 dark:text-slate-400 uppercase">Database</span>
+            <span className="text-emerald-600 dark:text-emerald-400 font-mono">Supabase PG17</span>
           </div>
         </div>
       </aside>
@@ -504,33 +510,33 @@ export default function SmartSoilMonitoringApp() {
         )}
 
         {/* Top Industrial Header */}
-        <header className="sticky top-0 z-20 bg-white/90 dark:bg-slate-900/90 backdrop-blur border-b border-slate-200 dark:border-slate-800 px-4 lg:px-8 py-3.5 no-print">
+        <header className="sticky top-0 z-20 bg-white/90 dark:bg-slate-900/90 metal-plate backdrop-blur border-b-2 border-slate-200 dark:border-slate-700 shadow-sm px-4 lg:px-8 py-3.5 no-print">
           <div className="flex flex-wrap items-center justify-between gap-3">
             {/* Mobile Menu Button & Title */}
             <div className="flex items-center gap-3">
               <button
                 type="button"
                 onClick={() => setMobileMenuOpen(true)}
-                className="lg:hidden p-2 rounded-xl bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-200"
+                className="lg:hidden p-2 rounded-md bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-200 border border-slate-200 dark:border-slate-700"
               >
                 <Menu className="w-5 h-5" />
               </button>
-              <div>
+              <div className="border-l-4 border-emerald-500 pl-3">
                 <div className="flex items-center gap-2">
-                  <h2 className="font-extrabold text-base sm:text-lg text-slate-900 dark:text-white">
+                  <h2 className="font-extrabold text-base sm:text-lg uppercase tracking-wider text-slate-900 dark:text-white">
                     Smart Soil Monitoring IoT
                   </h2>
                   {isDemo ? (
-                    <span className="px-2.5 py-0.5 rounded-full text-[11px] font-extrabold bg-amber-500/20 text-amber-600 dark:text-amber-400 border border-amber-500/40">
+                    <span className="px-2.5 py-0.5 rounded-sm font-mono text-[11px] font-extrabold bg-amber-500/20 text-amber-600 dark:text-amber-400 border border-amber-500/40">
                       DEMO MODE
                     </span>
                   ) : (
-                    <span className="px-2.5 py-0.5 rounded-full text-[11px] font-extrabold bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 border border-emerald-500/40">
+                    <span className="px-2.5 py-0.5 rounded-sm font-mono text-[11px] font-extrabold bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 border border-emerald-500/40">
                       LIVE HARDWARE
                     </span>
                   )}
                 </div>
-                <p className="text-xs text-slate-500 dark:text-slate-400 hidden sm:block">
+                <p className="text-xs font-mono text-slate-500 dark:text-slate-400 hidden sm:block">
                   {activeDeviceStatus.name} • {activeDeviceStatus.location}
                 </p>
               </div>
@@ -607,19 +613,21 @@ export default function SmartSoilMonitoringApp() {
               className="fixed inset-0 bg-black/60"
               onClick={() => setMobileMenuOpen(false)}
             />
-            <div className="relative w-72 max-w-full bg-slate-900 text-white h-full p-5 flex flex-col justify-between z-10">
+            <div className="relative w-72 max-w-full bg-white dark:bg-slate-900 metal-plate text-slate-800 dark:text-white h-full flex flex-col justify-between z-10 border-r-2 border-slate-200 dark:border-slate-700">
+              <div className="hazard-stripe h-1.5 w-full shrink-0" />
+              <div className="flex-1 p-5 flex flex-col justify-between">
               <div className="space-y-5">
-                <div className="flex items-center justify-between border-b border-slate-800 pb-4">
+                <div className="flex items-center justify-between border-b border-slate-200 dark:border-slate-800 pb-4">
                   <div className="flex items-center gap-2.5">
-                    <div className="w-8 h-8 rounded-lg bg-emerald-600 flex items-center justify-center">
+                    <div className="w-8 h-8 rounded-md bg-emerald-600 flex items-center justify-center">
                       <Sprout className="w-5 h-5 text-white" />
                     </div>
-                    <span className="font-bold text-sm">SMART SOIL IoT</span>
+                    <span className="font-bold text-sm tracking-[0.15em]">SMART SOIL IoT</span>
                   </div>
                   <button
                     type="button"
                     onClick={() => setMobileMenuOpen(false)}
-                    className="p-1.5 rounded-lg bg-slate-800"
+                    className="p-1.5 rounded-md bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700"
                   >
                     <X className="w-4 h-4" />
                   </button>
@@ -636,10 +644,10 @@ export default function SmartSoilMonitoringApp() {
                           setActiveNav(item.id);
                           setMobileMenuOpen(false);
                         }}
-                        className={`w-full flex items-center justify-between px-3.5 py-2.5 rounded-xl text-xs font-bold ${
+                        className={`w-full flex items-center justify-between px-3.5 py-2.5 rounded-md border-l-4 text-xs font-bold uppercase tracking-wide ${
                           activeNav === item.id
-                            ? "bg-emerald-600 text-white"
-                            : "text-slate-300 hover:bg-slate-800"
+                            ? "bg-emerald-600 border-emerald-300 text-white"
+                            : "border-transparent text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800"
                         }`}
                       >
                         <span className="flex items-center gap-3">
@@ -665,6 +673,7 @@ export default function SmartSoilMonitoringApp() {
                 <Download className="w-4 h-4" />
                 Install Aplikasi Android (PWA)
               </button>
+              </div>
             </div>
           </div>
         )}
@@ -1018,7 +1027,7 @@ export default function SmartSoilMonitoringApp() {
         </main>
 
         {/* Bottom Navigation Bar for Android / Mobile */}
-        <nav className="lg:hidden fixed bottom-0 inset-x-0 bg-slate-900 border-t border-slate-800 px-2 py-1.5 grid grid-cols-5 gap-1 z-30 no-print">
+        <nav className="lg:hidden fixed bottom-0 inset-x-0 bg-white dark:bg-slate-900 metal-plate border-t-2 border-emerald-500 shadow-[0_-4px_12px_rgba(0,0,0,0.12)] px-2 py-1.5 grid grid-cols-5 gap-1 z-30 no-print">
           {[
             NAV_ITEMS[0],
             NAV_ITEMS[1],
@@ -1033,8 +1042,10 @@ export default function SmartSoilMonitoringApp() {
                 key={item.id}
                 type="button"
                 onClick={() => setActiveNav(item.id)}
-                className={`flex flex-col items-center justify-center py-1.5 rounded-lg text-[10px] font-bold ${
-                  active ? "text-emerald-400" : "text-slate-400"
+                className={`flex flex-col items-center justify-center py-1.5 rounded-md text-[10px] font-bold uppercase tracking-wide ${
+                  active
+                    ? "text-emerald-600 dark:text-emerald-400 bg-emerald-500/10"
+                    : "text-slate-500 dark:text-slate-400"
                 }`}
               >
                 <Icon className="w-4 h-4 mb-0.5" />

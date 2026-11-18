@@ -236,36 +236,36 @@ export function SoilMonitoringCards({
                       <linearGradient id="phGrad" x1="0" y1="0" x2="0" y2="1">
                         <stop
                           offset="5%"
-                          stopColor="#10b981"
+                          stopColor="#3383f5"
                           stopOpacity={0.35}
                         />
                         <stop
                           offset="95%"
-                          stopColor="#10b981"
+                          stopColor="#3383f5"
                           stopOpacity={0}
                         />
                       </linearGradient>
                     </defs>
                     <CartesianGrid
                       strokeDasharray="3 3"
-                      stroke="#334155"
+                      stroke="#3a4a61"
                       opacity={0.2}
                     />
                     <XAxis
                       dataKey="time"
                       tick={{ fontSize: 10 }}
-                      stroke="#64748b"
+                      stroke="#62758f"
                     />
                     <YAxis
                       domain={[4, 9]}
                       tick={{ fontSize: 10 }}
-                      stroke="#64748b"
+                      stroke="#62758f"
                       width={28}
                     />
                     <Tooltip
                       contentStyle={{
-                        backgroundColor: "#0f172a",
-                        borderColor: "#1e293b",
+                        backgroundColor: "#202c3d",
+                        borderColor: "#3a4a61",
                         color: "#f8fafc",
                         fontSize: "12px",
                         borderRadius: "8px",
@@ -275,7 +275,7 @@ export function SoilMonitoringCards({
                       type="monotone"
                       dataKey="ph"
                       name="Soil pH"
-                      stroke="#10b981"
+                      stroke="#3383f5"
                       strokeWidth={2}
                       fill="url(#phGrad)"
                     />
@@ -434,35 +434,35 @@ export function SoilMonitoringCards({
                       <linearGradient id="dmsGrad" x1="0" y1="0" x2="0" y2="1">
                         <stop
                           offset="5%"
-                          stopColor="#059669"
+                          stopColor="#1f66e0"
                           stopOpacity={0.35}
                         />
                         <stop
                           offset="95%"
-                          stopColor="#059669"
+                          stopColor="#1f66e0"
                           stopOpacity={0}
                         />
                       </linearGradient>
                     </defs>
                     <CartesianGrid
                       strokeDasharray="3 3"
-                      stroke="#334155"
+                      stroke="#3a4a61"
                       opacity={0.2}
                     />
                     <XAxis
                       dataKey="time"
                       tick={{ fontSize: 10 }}
-                      stroke="#64748b"
+                      stroke="#62758f"
                     />
                     <YAxis
                       tick={{ fontSize: 10 }}
-                      stroke="#64748b"
+                      stroke="#62758f"
                       width={34}
                     />
                     <Tooltip
                       contentStyle={{
-                        backgroundColor: "#0f172a",
-                        borderColor: "#1e293b",
+                        backgroundColor: "#202c3d",
+                        borderColor: "#3a4a61",
                         color: "#f8fafc",
                         fontSize: "12px",
                         borderRadius: "8px",
@@ -474,7 +474,7 @@ export function SoilMonitoringCards({
                       name={
                         config.dms_calibrated ? "Moisture (%)" : "DMS Raw"
                       }
-                      stroke="#059669"
+                      stroke="#1f66e0"
                       strokeWidth={2}
                       fill="url(#dmsGrad)"
                     />
@@ -617,36 +617,36 @@ export function SoilMonitoringCards({
                       <linearGradient id="tempGrad" x1="0" y1="0" x2="0" y2="1">
                         <stop
                           offset="5%"
-                          stopColor="#10b981"
+                          stopColor="#3383f5"
                           stopOpacity={0.35}
                         />
                         <stop
                           offset="95%"
-                          stopColor="#10b981"
+                          stopColor="#3383f5"
                           stopOpacity={0}
                         />
                       </linearGradient>
                     </defs>
                     <CartesianGrid
                       strokeDasharray="3 3"
-                      stroke="#334155"
+                      stroke="#3a4a61"
                       opacity={0.2}
                     />
                     <XAxis
                       dataKey="time"
                       tick={{ fontSize: 10 }}
-                      stroke="#64748b"
+                      stroke="#62758f"
                     />
                     <YAxis
                       domain={[15, 40]}
                       tick={{ fontSize: 10 }}
-                      stroke="#64748b"
+                      stroke="#62758f"
                       width={28}
                     />
                     <Tooltip
                       contentStyle={{
-                        backgroundColor: "#0f172a",
-                        borderColor: "#1e293b",
+                        backgroundColor: "#202c3d",
+                        borderColor: "#3a4a61",
                         color: "#f8fafc",
                         fontSize: "12px",
                         borderRadius: "8px",
@@ -656,7 +656,7 @@ export function SoilMonitoringCards({
                       type="monotone"
                       dataKey="temperature"
                       name="Suhu Tanah (°C)"
-                      stroke="#10b981"
+                      stroke="#3383f5"
                       strokeWidth={2}
                       fill="url(#tempGrad)"
                     />

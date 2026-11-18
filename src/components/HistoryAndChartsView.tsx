@@ -189,7 +189,7 @@ export function HistoryAndChartsView({
           <title>Laporan Riwayat Smart Soil Monitoring IoT</title>
           <style>
             body { font-family: Arial, sans-serif; color: #0f172a; padding: 24px; }
-            h1 { color: #059669; margin-bottom: 4px; }
+            h1 { color: #1f66e0; margin-bottom: 4px; }
             p { color: #475569; font-size: 13px; margin-top: 0; }
             table { width: 100%; border-collapse: collapse; margin-top: 16px; font-size: 12px; }
             th, td { border: 1px solid #cbd5e1; padding: 8px 10px; text-align: left; }
@@ -389,23 +389,23 @@ export function HistoryAndChartsView({
                   <LineChart data={chartData}>
                     <CartesianGrid
                       strokeDasharray="3 3"
-                      stroke="#334155"
+                      stroke="#3a4a61"
                       opacity={0.2}
                     />
                     <XAxis
                       dataKey="time"
                       tick={{ fontSize: 10 }}
-                      stroke="#64748b"
+                      stroke="#62758f"
                     />
                     <YAxis
                       domain={[4, 9]}
                       tick={{ fontSize: 11 }}
-                      stroke="#64748b"
+                      stroke="#62758f"
                     />
                     <Tooltip
                       contentStyle={{
-                        backgroundColor: "#0f172a",
-                        borderColor: "#1e293b",
+                        backgroundColor: "#202c3d",
+                        borderColor: "#3a4a61",
                         color: "#f8fafc",
                         borderRadius: "8px",
                       }}
@@ -415,7 +415,7 @@ export function HistoryAndChartsView({
                       type="monotone"
                       dataKey="soil_ph"
                       name="Soil pH"
-                      stroke="#10b981"
+                      stroke="#3383f5"
                       strokeWidth={2.5}
                       dot={{ r: 2 }}
                     />
@@ -448,19 +448,19 @@ export function HistoryAndChartsView({
                   <LineChart data={chartData}>
                     <CartesianGrid
                       strokeDasharray="3 3"
-                      stroke="#334155"
+                      stroke="#3a4a61"
                       opacity={0.2}
                     />
                     <XAxis
                       dataKey="time"
                       tick={{ fontSize: 10 }}
-                      stroke="#64748b"
+                      stroke="#62758f"
                     />
-                    <YAxis tick={{ fontSize: 11 }} stroke="#64748b" />
+                    <YAxis tick={{ fontSize: 11 }} stroke="#62758f" />
                     <Tooltip
                       contentStyle={{
-                        backgroundColor: "#0f172a",
-                        borderColor: "#1e293b",
+                        backgroundColor: "#202c3d",
+                        borderColor: "#3a4a61",
                         color: "#f8fafc",
                         borderRadius: "8px",
                       }}
@@ -474,7 +474,7 @@ export function HistoryAndChartsView({
                           ? "Soil Moisture DMS (%)"
                           : "Soil DMS (Raw)"
                       }
-                      stroke="#059669"
+                      stroke="#1f66e0"
                       strokeWidth={2.5}
                       dot={{ r: 2 }}
                     />
@@ -505,23 +505,23 @@ export function HistoryAndChartsView({
                   <LineChart data={chartData}>
                     <CartesianGrid
                       strokeDasharray="3 3"
-                      stroke="#334155"
+                      stroke="#3a4a61"
                       opacity={0.2}
                     />
                     <XAxis
                       dataKey="time"
                       tick={{ fontSize: 10 }}
-                      stroke="#64748b"
+                      stroke="#62758f"
                     />
                     <YAxis
                       domain={[15, 40]}
                       tick={{ fontSize: 11 }}
-                      stroke="#64748b"
+                      stroke="#62758f"
                     />
                     <Tooltip
                       contentStyle={{
-                        backgroundColor: "#0f172a",
-                        borderColor: "#1e293b",
+                        backgroundColor: "#202c3d",
+                        borderColor: "#3a4a61",
                         color: "#f8fafc",
                         borderRadius: "8px",
                       }}
@@ -531,7 +531,7 @@ export function HistoryAndChartsView({
                       type="monotone"
                       dataKey="soil_temperature"
                       name="Soil Temperature (°C)"
-                      stroke="#34d399"
+                      stroke="#59a2fb"
                       strokeWidth={2.5}
                       dot={{ r: 2 }}
                     />
@@ -562,23 +562,23 @@ export function HistoryAndChartsView({
                   <LineChart data={chartData}>
                     <CartesianGrid
                       strokeDasharray="3 3"
-                      stroke="#334155"
+                      stroke="#3a4a61"
                       opacity={0.2}
                     />
                     <XAxis
                       dataKey="time"
                       tick={{ fontSize: 10 }}
-                      stroke="#64748b"
+                      stroke="#62758f"
                     />
                     <YAxis
                       domain={[10.5, 14.5]}
                       tick={{ fontSize: 11 }}
-                      stroke="#64748b"
+                      stroke="#62758f"
                     />
                     <Tooltip
                       contentStyle={{
-                        backgroundColor: "#0f172a",
-                        borderColor: "#1e293b",
+                        backgroundColor: "#202c3d",
+                        borderColor: "#3a4a61",
                         color: "#f8fafc",
                         borderRadius: "8px",
                       }}
@@ -588,7 +588,7 @@ export function HistoryAndChartsView({
                       type="monotone"
                       dataKey="battery_voltage"
                       name="Battery Voltage (V)"
-                      stroke="#10b981"
+                      stroke="#3383f5"
                       strokeWidth={2.5}
                       dot={{ r: 2 }}
                     />

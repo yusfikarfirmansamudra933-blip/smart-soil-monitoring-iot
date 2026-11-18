@@ -2,13 +2,136 @@
 @tailwind components;
 @tailwind utilities;
 
+/* =====================================================================
+   INDUSTRIAL BLUE-STEEL THEME
+   - Dark  : abu-biru (steel blue-gray)
+   - Light : putih-biru (blue-white)
+   ===================================================================== */
 @layer base {
   :root {
-    color-scheme: light dark;
+    color-scheme: light;
+    --ind-bg: #e9eff7;
+    --ind-grid: rgba(31, 102, 224, 0.07);
+    --ind-grid-major: rgba(31, 102, 224, 0.12);
+    --ind-panel-edge: #1f66e0;
+    --ind-panel-shadow: 0 1px 0 rgba(255, 255, 255, 0.9) inset,
+      0 1px 2px rgba(22, 32, 48, 0.08), 0 4px 14px -6px rgba(31, 102, 224, 0.18);
+    --ind-scroll-track: rgba(32, 44, 61, 0.08);
+    --ind-scroll-thumb: rgba(31, 102, 224, 0.45);
+  }
+
+  .dark {
+    color-scheme: dark;
+    --ind-bg: #162030;
+    --ind-grid: rgba(133, 152, 178, 0.06);
+    --ind-grid-major: rgba(133, 152, 178, 0.1);
+    --ind-panel-edge: #3383f5;
+    --ind-panel-shadow: 0 1px 0 rgba(255, 255, 255, 0.04) inset,
+      0 2px 4px rgba(0, 0, 0, 0.25), 0 8px 20px -10px rgba(0, 0, 0, 0.5);
+    --ind-scroll-track: rgba(0, 0, 0, 0.25);
+    --ind-scroll-thumb: rgba(51, 131, 245, 0.5);
   }
 
   body {
-    @apply bg-slate-50 text-slate-900 dark:bg-slate-950 dark:text-slate-100 antialiased selection:bg-emerald-500 selection:text-white;
+    @apply text-slate-900 dark:text-slate-100 antialiased selection:bg-emerald-500 selection:text-white;
+    font-feature-settings: "tnum" 1, "zero" 1;
+    background-color: var(--ind-bg);
+    /* Blueprint / engineering grid */
+    background-image:
+      linear-gradient(var(--ind-grid-major) 1px, transparent 1px),
+      linear-gradient(90deg, var(--ind-grid-major) 1px, transparent 1px),
+      linear-gradient(var(--ind-grid) 1px, transparent 1px),
+      linear-gradient(90deg, var(--ind-grid) 1px, transparent 1px);
+    background-size: 120px 120px, 120px 120px, 24px 24px, 24px 24px;
+    background-attachment: fixed;
+  }
+
+  h1,
+  h2,
+  h3,
+  h4 {
+    letter-spacing: 0.02em;
+  }
+}
+
+@layer components {
+  /* Panel industri: tepi atas beraksen biru + bayangan bertekstur logam.
+     Diterapkan otomatis ke kartu utama (rounded-2xl + border) di area konten,
+     kecuali banner peringatan berwarna (amber / rose / red). */
+  main .rounded-2xl.border:not([class*="amber"]):not([class*="rose"]):not([class*="red-"]) {
+    position: relative;
+    border-top-width: 2px;
+    border-top-color: var(--ind-panel-edge);
+    box-shadow: var(--ind-panel-shadow);
+  }
+
+  /* Sub-panel / inset well */
+  main .rounded-xl[class*="bg-slate-50"],
+  main .rounded-xl[class*="bg-slate-100"] {
+    box-shadow: inset 0 1px 2px rgba(22, 32, 48, 0.08);
+  }
+  .dark main .rounded-xl[class*="bg-slate-800"] {
+    box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.35);
+  }
+
+  /* Label & tombol bergaya plat nama industri */
+  button {
+    letter-spacing: 0.03em;
+  }
+
+  /* Garis hazard kuning-hitam */
+  .hazard-stripe {
+    background-image: repeating-linear-gradient(
+      -45deg,
+      #f5b301 0 10px,
+      #1a1a1a 10px 20px
+    );
+  }
+
+  /* Plat logam brushed untuk sidebar / header */
+  .metal-plate {
+    background-image: linear-gradient(
+      180deg,
+      rgba(255, 255, 255, 0.05) 0%,
+      rgba(255, 255, 255, 0) 40%,
+      rgba(0, 0, 0, 0.08) 100%
+    );
+  }
+
+  /* Baut sudut dekoratif */
+  .rivets {
+    position: relative;
+  }
+  .rivets::before,
+  .rivets::after {
+    content: "";
+    position: absolute;
+    top: 8px;
+    width: 6px;
+    height: 6px;
+    border-radius: 9999px;
+    background: radial-gradient(circle at 35% 35%, #d4dfec, #62758f 70%);
+    box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.2);
+  }
+  .rivets::before {
+    left: 8px;
+  }
+  .rivets::after {
+    right: 8px;
+  }
+
+  /* LED indikator berkedip */
+  .led-pulse {
+    animation: led-pulse 1.6s ease-in-out infinite;
+  }
+  @keyframes led-pulse {
+    0%,
+    100% {
+      opacity: 1;
+    }
+    50% {
+      opacity: 0.35;
+    }
   }
 }
 
@@ -18,18 +141,22 @@
   height: 8px;
 }
 ::-webkit-scrollbar-track {
-  background: rgba(15, 23, 42, 0.08);
+  background: var(--ind-scroll-track);
 }
 ::-webkit-scrollbar-thumb {
-  background: rgba(16, 185, 129, 0.45);
-  border-radius: 9999px;
+  background: var(--ind-scroll-thumb);
+  border-radius: 2px;
 }
 ::-webkit-scrollbar-thumb:hover {
-  background: rgba(16, 185, 129, 0.75);
+  background: rgba(51, 131, 245, 0.8);
 }
 
 @media print {
   .no-print {
     display: none !important;
+  }
+  body {
+    background-image: none !important;
+    background-color: #fff !important;
   }
 }
