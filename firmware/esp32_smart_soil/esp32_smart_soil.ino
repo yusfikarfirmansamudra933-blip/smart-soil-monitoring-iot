@@ -18,7 +18,7 @@
 // Konfigurasi Identitas Perangkat & Endpoint API
 const char* DEVICE_ID      = "SOIL-001";
 const char* API_KEY        = "sk_soil_001_esp32_4g_key_2026";
-const char* API_ENDPOINT   = "https://smart-soil-monitoring-iot-me-a75e.vercel.app/api/v1/telemetry";
+const char* API_ENDPOINT   = "https://smart-soil-monitoring-iot.vercel.app/api/v1/telemetry";
 
 // Koneksi 4G CPE / MiFi / Modem
 const char* MODEM_AP_SSID  = "4G_SMART_SOIL_MODEM";
