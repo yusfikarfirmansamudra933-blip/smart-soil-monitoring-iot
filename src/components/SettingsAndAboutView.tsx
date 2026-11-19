@@ -181,53 +181,53 @@ export function AboutProjectView() {
   const hardwareList = [
     {
       no: 1,
-      name: "ESP32 DevKit",
-      role: "Mikrokontroler utama dual-core 32-bit untuk akuisisi sensor & telemetri.",
+      name: "ESP32-S3 N16R8",
+      role: "Mikrokontroler utama (16MB Flash, 8MB OPI PSRAM, I2C, ADC1, UART) sebagai otak sistem.",
     },
     {
       no: 2,
-      name: "Sensor pH Tanah (Sesuai Foto Produk)",
-      role: "Pengukur tingkat keasaman/kebasaan tanah dengan driver komunikasi modular.",
+      name: "2× Sensor Arus & Tegangan DC INA226",
+      role: "INA226 #1 (I2C 0x40) memantau Panel Surya dan INA226 #2 (I2C 0x41) memantau Baterai (V, A, W).",
     },
     {
       no: 3,
-      name: "Sensor DMS (Sesuai Foto Produk)",
-      role: "Pengukur kelembapan tanah DMS (mendukung nilai mentah & konversi % terkalibrasi).",
+      name: "Solar Charge Controller CN3791 (MPPT)",
+      role: "Pengatur pengisian daya MPPT dari panel surya ke baterai secara efisien.",
     },
     {
       no: 4,
-      name: "DS18B20 Waterproof",
-      role: "Sensor suhu tanah digital tahan air berbasis protokol 1-Wire.",
+      name: "Active Buzzer (Peringatan Pulsa Modem 4G)",
+      role: "Aktif otomatis melalui GPIO 21 saat sisa pulsa/kuota Modem 4G menipis di bawah batas minimum.",
     },
     {
       no: 5,
-      name: "Modem 4G LTE",
-      role: "Transmisi data internet lapangan jarak jauh ke server cloud.",
+      name: "DS18B20 Waterproof",
+      role: "Sensor suhu tanah digital tahan air berbasis protokol 1-Wire (GPIO 4 + pull-up 4.7 kΩ).",
     },
     {
       no: 6,
-      name: "Panel Surya 10 Wp",
-      role: "Sumber energi terbarukan utama untuk operasional mandiri di lahan.",
+      name: "Capacitive Soil Moisture Sensor",
+      role: "Sensor kelembapan tanah kapasitif anti-korosi terhubung ke ADC1 ESP32-S3 (GPIO 5).",
     },
     {
       no: 7,
-      name: "Solar Charge Controller PWM",
-      role: "Pengatur pengisian daya dari panel surya ke baterai 12V.",
+      name: "Sensor pH Tanah Output Analog ADC + DMS",
+      role: "Pengukur pH tanah output analog ADC (GPIO 6) dipadukan pembacaan DMS (GPIO 7) dengan Driver Modular.",
     },
     {
       no: 8,
-      name: "Baterai 12V 7Ah",
-      role: "Penyimpanan energi cadangan untuk operasional siang & malam 24 jam.",
+      name: "Modem 4G LTE",
+      role: "Transmisi data internet lapangan jarak jauh ke cloud & pembacaan status sisa pulsa.",
     },
     {
       no: 9,
-      name: "DC-DC Converter 12V ke 5V",
-      role: "Penurun tegangan efisien untuk menyuplai ESP32, sensor, dan modem.",
+      name: "Panel Surya & Baterai Cadangan",
+      role: "Sumber energi terbarukan mandiri untuk operasional 24 jam di lahan pertanian.",
     },
     {
       no: 10,
-      name: "Sekering & Distribusi Daya",
-      role: "Sistem proteksi arus pendek dan terminal distribusi jalur daya.",
+      name: "DC-DC Converter, Sekering & Distribusi Daya",
+      role: "Regulasi tegangan 5V stabil untuk ESP32-S3 & Modem 4G beserta proteksi arus pendek.",
     },
   ];
 
@@ -259,13 +259,14 @@ export function AboutProjectView() {
         </div>
         <p className="text-sm text-slate-600 dark:text-slate-300 leading-relaxed">
           <strong>Smart Soil Monitoring IoT</strong> dirancang dengan standar{" "}
-          <em>Industrial IoT</em> untuk memantau parameter krusial kesuburan
-          tanah secara real-time maupun historis. Sistem ini mematuhi prinsip
-          ketat perangkat keras: <strong>tidak</strong> menggunakan Capacitive
-          Soil Moisture Sensor maupun sensor pH cairan PH-4502C, serta
-          menggunakan arsitektur <strong>Driver Sensor Modular</strong> agar
-          antarmuka komunikasi sensor pH tanah dan DMS dapat disesuaikan dengan
-          spesifikasi datasheet fisik.
+          <em>Industrial IoT</em> berbasis <strong>ESP32-S3 N16R8</strong>,{" "}
+          <strong>2× sensor arus DC INA226</strong> (untuk Panel Surya &amp;
+          Baterai), <strong>CN3791 MPPT</strong>,{" "}
+          <strong>Active Buzzer peringatan sisa pulsa Modem 4G</strong>,{" "}
+          <strong>DS18B20 Waterproof</strong>,{" "}
+          <strong>Capacitive Soil Moisture</strong>, dan{" "}
+          <strong>Sensor pH Tanah output Analog ADC + DMS</strong> dengan
+          arsitektur <strong>Driver Sensor Modular</strong>.
         </p>
       </div>
 
@@ -330,12 +331,19 @@ Headers:
 
 {
   "device_id": "SOIL-001",
-  "timestamp": "2026-11-18T10:00:00Z",
+  "timestamp": "2026-11-19T10:00:00Z",
   "soil_ph": 6.5,
   "soil_moisture": 58.2,
   "soil_dms_raw": 2150,
   "soil_temperature": 28.4,
-  "battery_voltage": 12.6,
+  "solar_voltage": 16.40,
+  "solar_current": 0.48,
+  "solar_power": 7.87,
+  "battery_voltage": 12.60,
+  "battery_current": 0.35,
+  "battery_power": 4.41,
+  "modem_credit_rp": 8500,
+  "buzzer_active": true,
   "sensor_status": {
     "ph": "online",
     "dms": "online",

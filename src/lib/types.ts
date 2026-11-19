@@ -39,13 +39,15 @@ export interface SoilTelemetryRecord {
   soil_moisture: number | null; // % if calibrated, null if raw-only or disconnected
   soil_dms_raw: number | null; // Raw DMS reading before/alongside calibration
   soil_temperature: number | null; // °C from DS18B20 Waterproof
-  battery_voltage: number | null; // 12V 7Ah battery voltage
-  battery_current: number | null; // null when no current sensor installed
-  battery_power: number | null; // null when no current sensor installed
-  solar_voltage: number | null; // null when no solar sensor installed
-  solar_current: number | null; // null when no solar sensor installed
-  solar_power: number | null; // null when no solar sensor installed
+  battery_voltage: number | null; // Dari INA226 #2 (0x41 - Baterai)
+  battery_current: number | null; // Dari INA226 #2 (0x41 - Arus Baterai)
+  battery_power: number | null; // Dari INA226 #2 (0x41 - Daya Baterai)
+  solar_voltage: number | null; // Dari INA226 #1 (0x40 - Panel Surya)
+  solar_current: number | null; // Dari INA226 #1 (0x40 - Arus Panel Surya)
+  solar_power: number | null; // Dari INA226 #1 (0x40 - Daya Panel Surya)
   charging_status: ChargingState | null;
+  modem_credit_rp?: number | null; // Sisa pulsa Modem 4G (Rp)
+  buzzer_active?: boolean; // Active Buzzer menyala jika pulsa modem menipis
   sensor_status: SensorStatusMap;
   is_demo: boolean;
 }
@@ -59,6 +61,8 @@ export interface SoilDeviceStatus {
   esp32_status: "online" | "offline";
   modem_status: "connected" | "disconnected" | "weak_signal";
   signal_rssi: number | null;
+  modem_credit_rp?: number | null;
+  buzzer_active?: boolean;
   sensor_ph_status: SensorConnectionState;
   sensor_dms_status: SensorConnectionState;
   sensor_temp_status: SensorConnectionState;
@@ -85,6 +89,8 @@ export interface SoilDeviceConfig {
   temp_min_alarm: number;
   temp_max_alarm: number;
   battery_low_alarm: number;
+  modem_credit_min_rp?: number;
+  buzzer_enabled?: boolean;
   updated_at?: string;
 }
 
@@ -97,7 +103,8 @@ export type AlertType =
   | "battery_low"
   | "esp32_offline"
   | "sensor_disconnected"
-  | "modem_offline";
+  | "modem_offline"
+  | "modem_credit_low";
 
 export interface SoilAlertRecord {
   id: number;

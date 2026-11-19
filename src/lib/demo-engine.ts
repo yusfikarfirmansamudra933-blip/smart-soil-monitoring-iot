@@ -11,8 +11,8 @@ export const DEFAULT_CONFIG: SoilDeviceConfig = {
   read_interval_sec: 30,
   send_interval_sec: 60,
   timezone: "Asia/Jakarta",
-  ph_interface_mode: "pending_datasheet",
-  dms_interface_mode: "pending_datasheet",
+  ph_interface_mode: "analog_adc",
+  dms_interface_mode: "analog_adc",
   dms_calibrated: true,
   dms_raw_dry: 3200,
   dms_raw_wet: 1400,
@@ -24,6 +24,8 @@ export const DEFAULT_CONFIG: SoilDeviceConfig = {
   temp_min_alarm: 18.0,
   temp_max_alarm: 34.0,
   battery_low_alarm: 11.8,
+  modem_credit_min_rp: 10000,
+  buzzer_enabled: true,
 };
 
 /**
@@ -35,7 +37,7 @@ export const DEFAULT_CONFIG: SoilDeviceConfig = {
  */
 export function generateDemoHistory(
   range: TimeRangeOption,
-  includeOptionalEnergySensors = false,
+  includeOptionalEnergySensors = true,
   dmsCalibrated = true
 ): SoilTelemetryRecord[] {
   const now = Date.now();
@@ -129,6 +131,8 @@ export function generateDemoHistory(
           : isDaylight
           ? "Charging"
           : "Discharging",
+      modem_credit_rp: 18500 - (points - 1 - i) * 350,
+      buzzer_active: 18500 - (points - 1 - i) * 350 < 10000,
       sensor_status: {
         ph: "online",
         dms: dmsCalibrated ? "online" : "uncalibrated",
@@ -146,13 +150,15 @@ export function generateDemoDeviceStatus(
 ): SoilDeviceStatus {
   return {
     device_id: "DEMO-SOIL-001",
-    name: "[DEMO] Smart Soil Station #1",
+    name: "[DEMO] Smart Soil Station #1 (ESP32-S3)",
     location: "Simulasi Lahan Pertanian Blok A",
-    firmware_version: "v1.2.0-esp32-4g (DEMO)",
+    firmware_version: "v2.0.0-esp32s3-n16r8 (DEMO)",
     api_key: "sk_soil_001_esp32_4g_key_2026",
     esp32_status: "online",
     modem_status: "connected",
     signal_rssi: -67,
+    modem_credit_rp: 8500,
+    buzzer_active: true,
     sensor_ph_status: "online",
     sensor_dms_status: dmsCalibrated ? "online" : "uncalibrated",
     sensor_temp_status: "online",
@@ -165,6 +171,20 @@ export function generateDemoDeviceStatus(
 export function generateDemoAlerts(): SoilAlertRecord[] {
   const now = Date.now();
   return [
+    {
+      id: 903,
+      device_id: "DEMO-SOIL-001",
+      ts: new Date(now - 8 * 60 * 1000).toISOString(),
+      alert_type: "modem_credit_low",
+      severity: "critical",
+      title: "[DEMO] Sisa Pulsa Modem 4G Menipis — Active Buzzer AKTIF",
+      message:
+        "Simulasi: Sisa pulsa Modem 4G (Rp 8.500) di bawah batas minimum (Rp 10.000). Active Buzzer ESP32-S3 dibunyikan otomatis.",
+      metric_value: "Rp 8.500 (Buzzer ON)",
+      threshold_value: "< Rp 10.000",
+      acknowledged: false,
+      is_demo: true,
+    },
     {
       id: 901,
       device_id: "DEMO-SOIL-001",

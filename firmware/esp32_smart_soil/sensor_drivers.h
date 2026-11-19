@@ -4,14 +4,14 @@
 #include <Arduino.h>
 
 // ============================================================================
-// MODULAR SENSOR DRIVER ARCHITECTURE — SMART SOIL MONITORING IoT
+// MODULAR SENSOR DRIVER ARCHITECTURE — SMART SOIL MONITORING IoT (ESP32-S3 N16R8)
 // ============================================================================
-// PENTING:
-// 1. TIDAK menggunakan Capacitive Soil Moisture Sensor.
-// 2. TIDAK menggunakan sensor pH cairan PH-4502C.
-// 3. TIDAK mengasumsikan sensor pH tanah menggunakan RS485 sebelum konfirmasi datasheet.
-// 4. TIDAK mengasumsikan sensor DMS menggunakan analog/digital sebelum konfirmasi datasheet.
-// 5. Jika sensor belum berhasil diintegrasikan/terhubung, laporkan "not_connected".
+// Mendukung:
+// 1. Sensor pH Tanah Output Analog ADC (+ opsi RS485/UART modular)
+// 2. Sensor DMS (Raw Data & kalibrasi %)
+// 3. Capacitive Soil Moisture Sensor (ADC1 terkalibrasi)
+// 4. DS18B20 Waterproof (1-Wire)
+// 5. Jika sensor belum terhubung, laporkan "not_connected".
 // ============================================================================
 
 enum PhInterfaceMode {
@@ -135,6 +135,35 @@ public:
       res.status = _calibrated ? "online" : "uncalibrated";
       return res;
     }
+    return res;
+  }
+};
+
+class CapacitiveMoistureDriver {
+private:
+  uint8_t _pin;
+  int _rawDry;
+  int _rawWet;
+
+public:
+  CapacitiveMoistureDriver(uint8_t pin, int rawDry = 2950, int rawWet = 1250)
+    : _pin(pin), _rawDry(rawDry), _rawWet(rawWet) {}
+
+  void begin() {
+    pinMode(_pin, INPUT);
+  }
+
+  SoilDmsReading read() {
+    SoilDmsReading res = { false, true, NAN, 0, "not_connected" };
+    int raw = analogRead(_pin);
+    if (raw <= 20 || raw >= 4085) {
+      return res; // Open circuit / sensor tidak terpasang
+    }
+    res.connected = true;
+    res.rawValue = raw;
+    float pct = ((float)(_rawDry - raw) / (float)(_rawDry - _rawWet)) * 100.0f;
+    res.moisturePercent = constrain(pct, 0.0f, 100.0f);
+    res.status = "online";
     return res;
   }
 };

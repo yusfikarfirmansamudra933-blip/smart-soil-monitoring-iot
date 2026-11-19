@@ -128,9 +128,9 @@ export function EnergyMonitoringView({
             )}
           </div>
           <p className="text-sm text-slate-500 dark:text-slate-400">
-            Spesifikasi Daya: Panel Surya 10 Wp • PWM Solar Charge Controller •
-            Baterai 12V 7Ah • DC-DC Step-Down 12V ke 5V • Sekering & Distribusi
-            Daya
+            Spesifikasi Daya: 2× INA226 (Solar <code>0x40</code> &amp; Baterai{" "}
+            <code>0x41</code>) • CN3791 MPPT Solar Charge Controller • Panel
+            Surya • Baterai • Sekering &amp; Distribusi Daya
           </p>
         </div>
 
@@ -143,10 +143,10 @@ export function EnergyMonitoringView({
               }
               className="px-3.5 py-2 rounded-xl text-xs font-semibold border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 hover:border-emerald-500 transition"
             >
-              Simulasi Sensor Arus/Surya:{" "}
+              Simulasi 2× INA226 (Solar &amp; Baterai):{" "}
               <span className="text-emerald-500 font-bold">
                 {demoOptionalEnergySensors
-                  ? "Terpasang (INA219)"
+                  ? "Terpasang (0x40 & 0x41)"
                   : "Tidak Dipasang (Not Available)"}
               </span>
             </button>
@@ -239,28 +239,28 @@ export function EnergyMonitoringView({
         {/* 3. Arus Baterai */}
         <div className="p-5 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 space-y-2">
           <div className="flex items-center justify-between text-xs font-semibold text-slate-500">
-            <span>3. Arus Baterai</span>
+            <span>3. Arus Baterai (INA226 #2)</span>
             <Zap className="w-4 h-4 text-emerald-500" />
           </div>
           {formatMetric(batteryCurrent, "A")}
           <p className="text-[11px] text-slate-400">
             {batteryCurrent === null
-              ? "Sensor arus baterai belum terpasang"
-              : "Sensor arus aktif"}
+              ? "INA226 #2 (0x41) belum terbaca"
+              : "INA226 #2 (I2C 0x41) aktif"}
           </p>
         </div>
 
         {/* 4. Daya Baterai */}
         <div className="p-5 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 space-y-2">
           <div className="flex items-center justify-between text-xs font-semibold text-slate-500">
-            <span>4. Daya Baterai</span>
+            <span>4. Daya Baterai (INA226 #2)</span>
             <Cpu className="w-4 h-4 text-emerald-500" />
           </div>
           {formatMetric(batteryPower, "W")}
           <p className="text-[11px] text-slate-400">
             {batteryPower === null
-              ? "Menunggu sensor arus & tegangan"
-              : "Kalkulasi V × I"}
+              ? "Menunggu pembacaan INA226 #2"
+              : "Kalkulasi V × I (0x41)"}
           </p>
         </div>
 
@@ -281,49 +281,49 @@ export function EnergyMonitoringView({
             </span>
           </div>
           <p className="text-[11px] text-slate-400">
-            Controller: Solar Charge Controller PWM
+            Controller: CN3791 MPPT Solar Charge Controller
           </p>
         </div>
 
         {/* 6. Tegangan Panel Surya */}
         <div className="p-5 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 space-y-2">
           <div className="flex items-center justify-between text-xs font-semibold text-slate-500">
-            <span>6. Tegangan Panel Surya (10 Wp)</span>
+            <span>6. Tegangan Panel Surya (INA226 #1)</span>
             <Sun className="w-4 h-4 text-amber-500" />
           </div>
           {formatMetric(solarVoltage, "V")}
           <p className="text-[11px] text-slate-400">
             {solarVoltage === null
-              ? "Sensor tegangan panel belum terpasang"
-              : "Input PV ke SCC PWM"}
+              ? "INA226 #1 (0x40) belum terbaca"
+              : "Input PV ke CN3791 MPPT (0x40)"}
           </p>
         </div>
 
         {/* 7. Arus Panel Surya */}
         <div className="p-5 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 space-y-2">
           <div className="flex items-center justify-between text-xs font-semibold text-slate-500">
-            <span>7. Arus Panel Surya</span>
+            <span>7. Arus Panel Surya (INA226 #1)</span>
             <Sun className="w-4 h-4 text-amber-500" />
           </div>
           {formatMetric(solarCurrent, "A")}
           <p className="text-[11px] text-slate-400">
             {solarCurrent === null
-              ? "Sensor arus panel belum terpasang"
-              : "Arus pengisian PV"}
+              ? "INA226 #1 (0x40) belum terbaca"
+              : "Arus DC Panel Surya (0x40)"}
           </p>
         </div>
 
         {/* 8. Daya Panel Surya */}
         <div className="p-5 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 space-y-2">
           <div className="flex items-center justify-between text-xs font-semibold text-slate-500">
-            <span>8. Daya Panel Surya</span>
+            <span>8. Daya Panel Surya (INA226 #1)</span>
             <Zap className="w-4 h-4 text-amber-500" />
           </div>
           {formatMetric(solarPower, "W")}
           <p className="text-[11px] text-slate-400">
             {solarPower === null
-              ? "Sensor daya panel belum terpasang"
-              : "Maksimum spesifikasi: 10 Wp"}
+              ? "INA226 #1 (0x40) belum terbaca"
+              : "Daya PV real-time (INA226 #1)"}
           </p>
         </div>
       </div>

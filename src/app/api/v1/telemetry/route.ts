@@ -73,6 +73,16 @@ export async function POST(req: NextRequest) {
       explicitStatus: normalized.charging_status,
     });
 
+    const creditMin = Number(config.modem_credit_min_rp ?? 10000);
+    const buzzerEnabled = config.buzzer_enabled !== false;
+    const isCreditLow =
+      normalized.modem_credit_rp !== null &&
+      normalized.modem_credit_rp !== undefined &&
+      normalized.modem_credit_rp < creditMin;
+    const effectiveBuzzerActive = Boolean(
+      normalized.buzzer_active || (buzzerEnabled && isCreditLow)
+    );
+
     // 1. Insert into soil_telemetry
     const { data: inserted, error: insertError } = await supabase
       .from("soil_telemetry")
@@ -91,6 +101,8 @@ export async function POST(req: NextRequest) {
         solar_current: normalized.solar_current,
         solar_power: normalized.solar_power,
         charging_status: chargingStatus,
+        modem_credit_rp: normalized.modem_credit_rp ?? null,
+        buzzer_active: effectiveBuzzerActive,
         sensor_status: normalized.sensor_status,
         is_demo: normalized.is_demo,
       })
@@ -111,6 +123,8 @@ export async function POST(req: NextRequest) {
         esp32_status: "online",
         modem_status: body.modem_status || "connected",
         signal_rssi: body.signal_rssi ?? -68,
+        modem_credit_rp: normalized.modem_credit_rp ?? null,
+        buzzer_active: effectiveBuzzerActive,
         sensor_ph_status: normalized.sensor_status.ph,
         sensor_dms_status: normalized.sensor_status.dms,
         sensor_temp_status: normalized.sensor_status.temperature,
@@ -246,6 +260,19 @@ export async function POST(req: NextRequest) {
       });
     }
 
+    if (isCreditLow) {
+      alertsToInsert.push({
+        device_id: deviceId,
+        alert_type: "modem_credit_low",
+        severity: "critical",
+        title: "Sisa Pulsa Modem 4G Menipis — Active Buzzer AKTIF",
+        message: `Sisa pulsa Modem 4G (Rp ${Number(normalized.modem_credit_rp).toLocaleString("id-ID")}) di bawah batas minimum (Rp ${creditMin.toLocaleString("id-ID")}). Active Buzzer ESP32-S3 diaktifkan.`,
+        metric_value: `Rp ${Number(normalized.modem_credit_rp).toLocaleString("id-ID")}`,
+        threshold_value: `< Rp ${creditMin.toLocaleString("id-ID")}`,
+        is_demo: normalized.is_demo,
+      });
+    }
+
     if (alertsToInsert.length > 0) {
       await supabase.from("soil_alerts").insert(alertsToInsert);
     }
@@ -256,6 +283,7 @@ export async function POST(req: NextRequest) {
         message: "Telemetry ingested successfully",
         data: inserted,
         triggered_alerts: alertsToInsert.length,
+        buzzer_command: effectiveBuzzerActive,
       },
       { status: 201 }
     );

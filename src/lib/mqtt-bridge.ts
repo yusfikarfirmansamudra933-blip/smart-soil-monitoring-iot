@@ -59,6 +59,8 @@ export function normalizeTelemetryPayload(
     solar_current: parseNum(rawPayload.solar_current),
     solar_power: parseNum(rawPayload.solar_power),
     charging_status: (rawPayload.charging_status as SoilTelemetryRecord["charging_status"]) || null,
+    modem_credit_rp: parseNum(rawPayload.modem_credit_rp),
+    buzzer_active: Boolean(rawPayload.buzzer_active),
     sensor_status: {
       ph: (sensorStatusRaw.ph as SoilTelemetryRecord["sensor_status"]["ph"]) || "not_connected",
       dms: (sensorStatusRaw.dms as SoilTelemetryRecord["sensor_status"]["dms"]) || "not_connected",

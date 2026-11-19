@@ -72,6 +72,8 @@ export async function POST(req: NextRequest) {
       temp_min_alarm: Number(body.temp_min_alarm ?? 18),
       temp_max_alarm: Number(body.temp_max_alarm ?? 34),
       battery_low_alarm: Number(body.battery_low_alarm ?? 11.8),
+      modem_credit_min_rp: Number(body.modem_credit_min_rp ?? 10000),
+      buzzer_enabled: Boolean(body.buzzer_enabled ?? true),
       updated_at: new Date().toISOString(),
     };
 
