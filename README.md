@@ -34,7 +34,7 @@ Aplikasi web profesional bergaya **Industrial IoT** untuk memantau kondisi tanah
 5. **DS18B20 Waterproof** — Sensor suhu tanah digital tahan air (1-Wire).
 6. **Capacitive Soil Moisture Sensor** — Sensor kelembapan tanah kapasitif anti-korosi.
 7. **Sensor pH Tanah Output Analog ADC + DMS** — Arsitektur *Driver Sensor Modular*.
-8. **Modem 4G LTE** — Koneksi internet lapangan & pembacaan status pulsa.
+8. **Modem 4G LTE (MiFi Bolt ZTE MF90 Unlock All Operator)** — Koneksi internet lapangan & pembacaan SMS kuota/pulsa operator.
 9. **Panel Surya & Baterai** — Sumber daya mandiri 24 jam.
 10. **DC-DC Converter 5V, Sekering (Fuse), & Distribusi Daya**.
 
@@ -119,7 +119,7 @@ Agar kedua sensor INA226 dapat berjalan bersamaan pada satu bus I2C tanpa bentro
 | **Sensor pH Tanah (Analog ADC)** | `VCC` / `GND` / `AOUT` | `3.3V` atau `5V`* / `GND` / **`GPIO 6`** | `ADC1_CH5` — *jika output analog >3.3V, gunakan pembagi tegangan* |
 | **Sensor DMS** | `VCC` / `GND` / `OUT` | `3.3V` / `GND` / **`GPIO 7`** | `ADC1_CH6` — pembacaan `Raw Value` + kalibrasi `%` |
 | **Active Buzzer (Alarm Pulsa)** | `VCC / (+)` / `GND / (-)` | **`GPIO 21`** / `GND` | Untuk buzzer 3.3V langsung ke `GPIO 21`; untuk buzzer 5V gunakan modul buzzer 3-pin (VCC 5V, GND, I/O → `GPIO 21`) atau transistor NPN S8050 + resistor 1 kΩ |
-| **Modem 4G (Opsional UART2)** | `TX` / `RX` / `VCC 5V` / `GND` | **`GPIO 18 (RX2)`** / **`GPIO 17 (TX2)`** / `5V DC-DC` / `GND` | Untuk cek sisa pulsa via AT Command USSD (`AT+CUSD`) atau koneksi data |
+| **Modem 4G (MiFi Bolt ZTE MF90)** | Port Micro-USB `5V` / WiFi AP | `5V DC-DC` / WiFi | Suplai `5V` stabil dari DC-DC Buck Converter; ESP32-S3 konek ke WiFi MiFi ZTE MF90 & baca SMS operator via `192.168.1.1` / `192.168.0.1` |
 
 ---
 
@@ -128,6 +128,13 @@ Agar kedua sensor INA226 dapat berjalan bersamaan pada satu bus I2C tanpa bentro
 File firmware berada di folder `firmware/esp32_smart_soil/`:
 - [esp32_smart_soil.ino](firmware/esp32_smart_soil/esp32_smart_soil.ino)
 - [sensor_drivers.h](firmware/esp32_smart_soil/sensor_drivers.h)
+- [modem_quota_reader.h](firmware/esp32_smart_soil/modem_quota_reader.h) — Pembaca SMS notifikasi kuota & pulsa operator dari Modem 4G kartu SIM
+
+### Cara Kerja Pembacaan Sisa Kuota dari SMS MiFi Bolt ZTE MF90
+1. ESP32-S3 terhubung ke WiFi **MiFi Bolt 4G ZTE MF90** lalu otomatis membaca kotak masuk SMS kartu SIM pada WebUI ZTE MF90 (`/goform/goform_get_cmd_process?cmd=sms_data_total`, IP otomatis `192.168.1.1` / `192.168.0.1`) setiap 2 menit melalui `ModemQuotaReader` (lengkap dengan dekoder **UCS2 Hex → Teks** bawaan ZTE).
+2. Saat operator mengirim SMS peringatan (misal *"Sisa kuota internet Anda 350 MB"* atau *"Sisa pulsa Anda Rp 8.500"*), parser otomatis mengekstrak angka **MB/GB** dan **Rp** lalu menyimpannya ke memori NVS Flash ESP32-S3 agar tidak hilang saat restart.
+3. Batas minimum kuota (`MB`), batas pulsa (`Rp`), dan sakelar Active Buzzer dapat diatur langsung dari web pada menu **Device Management** — ESP32-S3 otomatis menyinkronkannya via `GET /api/v1/device/config`.
+4. Jika kuota atau pulsa berada di bawah batas minimum, **Active Buzzer (`GPIO 21`)** otomatis berbunyi 3× beep peringatan. *(Anda juga bisa mengetes parsernya langsung lewat Serial Monitor dengan mengetik contoh kalimat SMS operator lalu menekan Enter).*
 
 ### Langkah 1 — Siapkan Arduino IDE & Library
 1. Instal **Arduino IDE 2.x** dari https://www.arduino.cc/en/software.
@@ -144,14 +151,17 @@ File firmware berada di folder `firmware/esp32_smart_soil/`:
 ### Langkah 2 — Konfigurasi Firmware
 Buka `firmware/esp32_smart_soil/esp32_smart_soil.ino` dan sesuaikan bagian konfigurasi:
 ```cpp
-const char* DEVICE_ID           = "SOIL-001";
-const char* API_KEY             = "sk_soil_001_esp32_4g_key_2026";
-const char* API_ENDPOINT        = "https://smart-soil-monitoring-iot.vercel.app/api/v1/telemetry";
+const char* DEVICE_ID         = "SOIL-001";
+const char* API_KEY           = "sk_soil_001_esp32_4g_key_2026";
+const char* BASE_API_URL      = "https://smart-soil-monitoring-iot.vercel.app";
 
-const char* MODEM_AP_SSID       = "NAMA_WIFI_MODEM_4G_ANDA";
-const char* MODEM_AP_PASS       = "PASSWORD_MODEM_4G_ANDA";
+const char* MODEM_AP_SSID     = "NAMA_WIFI_MODEM_4G_ANDA";
+const char* MODEM_AP_PASS     = "PASSWORD_MODEM_4G_ANDA";
 
-const float MODEM_CREDIT_MIN_RP = 10000.0f; // Active Buzzer bunyi jika pulsa < Rp 10.000
+// Default siap pakai untuk MiFi Bolt 4G ZTE MF90:
+const ModemSmsSourceMode MODEM_SMS_MODE = MODEM_SMS_HTTP_ZTE;
+const char* MODEM_ROUTER_IP             = "auto";  // Otomatis deteksi 192.168.1.1 / 192.168.0.1
+const char* MODEM_WEB_PASSWORD          = "admin"; // Password WebUI ZTE MF90 (default: "admin")
 ```
 
 ### Langkah 3 — Pengaturan Board Khusus ESP32-S3 N16R8 & Upload

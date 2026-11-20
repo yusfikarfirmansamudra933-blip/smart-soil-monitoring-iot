@@ -1,6 +1,6 @@
 /**
  * ============================================================================
- * SMART SOIL MONITORING IoT — ESP32-S3 N16R8 FIRMWARE (v2.0.0)
+ * SMART SOIL MONITORING IoT — ESP32-S3 N16R8 FIRMWARE (v2.1.0)
  * ============================================================================
  * Komponen Utama:
  * 1. MCU             : ESP32-S3 N16R8 (16MB Flash, 8MB OPI PSRAM)
@@ -9,11 +9,11 @@
  *                      - INA226 #1 (0x40): Panel Surya (V, A, W)
  *                      - INA226 #2 (0x41): Baterai (V, A, W)
  * 3. Solar Charger   : CN3791 MPPT Solar Charge Controller
- * 4. Active Buzzer   : GPIO 21 (Berbunyi otomatis saat sisa pulsa Modem 4G menipis)
+ * 4. Active Buzzer   : GPIO 21 (Berbunyi otomatis saat kuota/pulsa Modem 4G menipis)
  * 5. Suhu Tanah      : DS18B20 Waterproof (1-Wire GPIO 4 + Pull-up 4.7kΩ)
  * 6. Kelembapan      : Capacitive Soil Moisture Sensor (ADC1 GPIO 5)
  * 7. pH Tanah + DMS  : Sensor pH Analog ADC (GPIO 6) + DMS (GPIO 7) — Driver Modular
- * 8. Konektivitas    : Modem 4G LTE (WiFi AP / UART2 GPIO 17 TX, GPIO 18 RX)
+ * 8. Konektivitas    : Modem 4G Kartu SIM (Baca SMS Operator -> Sisa Kuota & Pulsa)
  */
 
 #include <WiFi.h>
@@ -23,19 +23,30 @@
 #include <DallasTemperature.h>
 #include <INA226_WE.h>
 #include "sensor_drivers.h"
+#include "modem_quota_reader.h"
 
 // ============================================================================
 // KONFIGURASI IDENTITAS PERANGKAT, API, & MODEM 4G
 // ============================================================================
 const char* DEVICE_ID         = "SOIL-001";
 const char* API_KEY           = "sk_soil_001_esp32_4g_key_2026";
-const char* API_ENDPOINT      = "https://smart-soil-monitoring-iot.vercel.app/api/v1/telemetry";
+const char* BASE_API_URL      = "https://smart-soil-monitoring-iot.vercel.app";
 
 const char* MODEM_AP_SSID     = "4G_SMART_SOIL_MODEM";
 const char* MODEM_AP_PASS     = "smartsoil2026";
 
-// Ambang batas sisa pulsa Modem 4G (Rp) pemicu Active Buzzer
-const float MODEM_CREDIT_MIN_RP = 10000.0f;
+// Pilih metode baca SMS kuota/pulsa dari Modem 4G kartu HP Anda:
+// - MODEM_SMS_HTTP_ZTE    : MiFi Bolt 4G ZTE MF90 (Otomatis deteksi Gateway IP: 192.168.1.1 / 192.168.0.1)
+// - MODEM_SMS_HTTP_HILINK : MiFi/Router Huawei HiLink (192.168.8.1)
+// - MODEM_SMS_UART_AT     : Modul 4G UART SIM7600/A7670 di GPIO 17/18
+const ModemSmsSourceMode MODEM_SMS_MODE = MODEM_SMS_HTTP_ZTE;
+const char* MODEM_ROUTER_IP             = "auto";  // "auto" -> pakai IP Gateway ZTE MF90 otomatis
+const char* MODEM_WEB_PASSWORD          = "admin"; // Password login WebUI ZTE MF90 (default: "admin")
+
+// Batas default (otomatis disinkronkan dengan menu Device Management di web)
+float modemQuotaMinMb  = 500.0f;
+float modemCreditMinRp = 10000.0f;
+bool  buzzerEnabled    = true;
 
 // ============================================================================
 // PIN MAPPING ESP32-S3 N16R8 (AMAN DARI OPI PSRAM GPIO 35/36/37)
@@ -49,13 +60,13 @@ const float MODEM_CREDIT_MIN_RP = 10000.0f;
 #define PIN_CAP_MOISTURE      5     // Capacitive Soil Moisture (ADC1_CH4)
 #define PIN_SOIL_PH_ADC       6     // Sensor pH Tanah Output Analog ADC (ADC1_CH5)
 #define PIN_SOIL_DMS          7     // Sensor DMS (ADC1_CH6)
-#define PIN_ACTIVE_BUZZER     21    // Active Buzzer (Alarm Pulsa Modem Menipis)
+#define PIN_ACTIVE_BUZZER     21    // Active Buzzer (Alarm Kuota/Pulsa Menipis)
 
-#define PIN_MODEM_TX          17    // UART2 TX -> RX Modem 4G (opsional AT USSD)
-#define PIN_MODEM_RX          18    // UART2 RX -> TX Modem 4G (opsional AT USSD)
+#define PIN_MODEM_TX          17    // UART2 TX -> RX Modul 4G (jika pakai MODEM_SMS_UART_AT)
+#define PIN_MODEM_RX          18    // UART2 RX -> TX Modul 4G (jika pakai MODEM_SMS_UART_AT)
 
 // ============================================================================
-// INISIALISASI OBJEK SENSOR
+// INISIALISASI OBJEK SENSOR & MODEM SMS READER
 // ============================================================================
 INA226_WE inaSolar   = INA226_WE(INA226_ADDR_SOLAR);
 INA226_WE inaBattery = INA226_WE(INA226_ADDR_BATTERY);
@@ -65,22 +76,23 @@ bool inaBatteryOk = false;
 OneWire oneWire(PIN_DS18B20);
 DallasTemperature ds18b20(&oneWire);
 
-// Driver Modular: pH Analog ADC + DMS + Capacitive Soil Moisture
+HardwareSerial ModemSerial(2);
+ModemQuotaReader modemReader(MODEM_SMS_MODE, MODEM_ROUTER_IP, MODEM_WEB_PASSWORD, &ModemSerial);
+
 ModularSoilPhDriver  phSensor(PH_MODE_ANALOG_ADC, PIN_SOIL_PH_ADC, 0.0f);
 ModularSoilDmsDriver dmsSensor(DMS_MODE_ANALOG_ADC, PIN_SOIL_DMS, true, 3200, 1400);
 CapacitiveMoistureDriver capMoistureSensor(PIN_CAP_MOISTURE, 2950, 1250);
 
 unsigned long lastSendMs = 0;
-const unsigned long SEND_INTERVAL_MS = 60000; // 60 detik
-
-// Variabel sisa pulsa Modem 4G (NAN jika belum terbaca via USSD/API)
-float currentModemCreditRp = NAN;
+unsigned long lastSmsPollMs = 0;
+unsigned long sendIntervalMs = 60000;        // 60 detik (disinkronkan dari web)
+const unsigned long SMS_POLL_MS = 120000;    // Cek SMS modem setiap 2 menit
 bool buzzerActive = false;
 
-void updateActiveBuzzer(bool lowCredit) {
-  buzzerActive = lowCredit;
+void updateActiveBuzzer(bool shouldRing) {
+  buzzerActive = buzzerEnabled && shouldRing;
   if (buzzerActive) {
-    // Pola bunyi beep-beep peringatan pulsa menipis (3x beep singkat)
+    // Pola bunyi beep-beep peringatan kuota/pulsa menipis (3x beep singkat)
     for (int i = 0; i < 3; i++) {
       digitalWrite(PIN_ACTIVE_BUZZER, HIGH);
       delay(180);
@@ -105,11 +117,39 @@ SoilTempReading readDs18b20() {
   return res;
 }
 
-float readModemCreditRp() {
-  // Jika menggunakan modul 4G UART (SIM7600/A7670), kirim AT+CUSD=1,"*888#",15
-  // lalu parse angka sisa pulsa (Rp) dan simpan ke currentModemCreditRp.
-  // Jika belum ada respon pulsa, kembalikan NAN (UI menampilkan "Not Available").
-  return currentModemCreditRp;
+// Helper sederhana baca nilai angka/boolean dari JSON config server
+float extractJsonNumber(const String& json, const char* key, float fallback) {
+  String pat = String("\"") + key + "\":";
+  int idx = json.indexOf(pat);
+  if (idx < 0) return fallback;
+  idx += pat.length();
+  while (idx < (int)json.length() && json[idx] == ' ') idx++;
+  return json.substring(idx, idx + 16).toFloat();
+}
+
+void syncRemoteDeviceConfig() {
+  if (WiFi.status() != WL_CONNECTED) return;
+  HTTPClient http;
+  String cfgUrl = String(BASE_API_URL) + "/api/v1/device/config?device_id=" + DEVICE_ID;
+  http.setTimeout(5000);
+  if (!http.begin(cfgUrl)) return;
+
+  int code = http.GET();
+  if (code == 200) {
+    String body = http.getString();
+    float qMin = extractJsonNumber(body, "modem_quota_min_mb", modemQuotaMinMb);
+    float cMin = extractJsonNumber(body, "modem_credit_min_rp", modemCreditMinRp);
+    float sendSec = extractJsonNumber(body, "send_interval_sec", sendIntervalMs / 1000.0f);
+    if (qMin > 0) modemQuotaMinMb = qMin;
+    if (cMin >= 0) modemCreditMinRp = cMin;
+    if (sendSec >= 10) sendIntervalMs = (unsigned long)sendSec * 1000UL;
+    if (body.indexOf("\"buzzer_enabled\":false") >= 0) buzzerEnabled = false;
+    else if (body.indexOf("\"buzzer_enabled\":true") >= 0) buzzerEnabled = true;
+
+    Serial.printf("[CONFIG SYNC] Batas Kuota: %.0f MB | Batas Pulsa: Rp %.0f | Buzzer: %s\n",
+                  modemQuotaMinMb, modemCreditMinRp, buzzerEnabled ? "ON" : "OFF");
+  }
+  http.end();
 }
 
 void setup() {
@@ -119,12 +159,17 @@ void setup() {
   pinMode(PIN_ACTIVE_BUZZER, OUTPUT);
   digitalWrite(PIN_ACTIVE_BUZZER, LOW);
 
+  if (MODEM_SMS_MODE == MODEM_SMS_UART_AT) {
+    ModemSerial.begin(115200, SERIAL_8N1, PIN_MODEM_RX, PIN_MODEM_TX);
+  }
+  modemReader.begin();
+
   // Inisialisasi I2C untuk 2x INA226
   Wire.begin(PIN_I2C_SDA, PIN_I2C_SCL);
 
   inaSolarOk = inaSolar.init();
   if (inaSolarOk) {
-    inaSolar.setResistorRange(0.1, 0.8); // Sesuaikan Rshunt (umumnya 0.1 Ohm)
+    inaSolar.setResistorRange(0.1, 0.8);
     Serial.println("[INA226 #1] Panel Surya (0x40) OK");
   } else {
     Serial.println("[INA226 #1] Panel Surya (0x40) TIDAK TERDETEKSI");
@@ -132,7 +177,7 @@ void setup() {
 
   inaBatteryOk = inaBattery.init();
   if (inaBatteryOk) {
-    inaBattery.setResistorRange(0.1, 0.8); // Sesuaikan Rshunt (umumnya 0.1 Ohm)
+    inaBattery.setResistorRange(0.1, 0.8);
     Serial.println("[INA226 #2] Baterai (0x41) OK");
   } else {
     Serial.println("[INA226 #2] Baterai (0x41) TIDAK TERDETEKSI");
@@ -148,7 +193,23 @@ void setup() {
 }
 
 void loop() {
-  if (millis() - lastSendMs >= SEND_INTERVAL_MS) {
+  // Uji manual SMS parser lewat Serial Monitor (ketik contoh SMS operator lalu Enter)
+  if (Serial.available()) {
+    String testSms = Serial.readStringUntil('\n');
+    testSms.trim();
+    if (testSms.length() > 5) {
+      modemReader.parseOperatorSms(testSms);
+    }
+  }
+
+  // Cek SMS notifikasi operator dari Modem 4G secara berkala
+  if (WiFi.status() == WL_CONNECTED && (millis() - lastSmsPollMs >= SMS_POLL_MS || lastSmsPollMs == 0)) {
+    lastSmsPollMs = millis();
+    modemReader.pollModemSms();
+    syncRemoteDeviceConfig();
+  }
+
+  if (millis() - lastSendMs >= sendIntervalMs) {
     lastSendMs = millis();
 
     SoilPhReading   ph   = phSensor.read();
@@ -156,12 +217,10 @@ void loop() {
     SoilDmsReading  cap  = capMoistureSensor.read();
     SoilTempReading temp = readDs18b20();
 
-    // Prioritaskan pembacaan kelembapan dari Capacitive Soil Moisture, fallback ke DMS
     float moisturePct = cap.connected ? cap.moisturePercent : dms.moisturePercent;
     int   rawMoisture = dms.connected ? dms.rawValue : cap.rawValue;
     const char* moistStatus = cap.connected ? cap.status : dms.status;
 
-    // Baca 2x INA226 (Solar Panel & Baterai) — kirim null jika sensor tidak terdeteksi
     float solarV = inaSolarOk ? inaSolar.getBusVoltage_V() : NAN;
     float solarI = inaSolarOk ? (inaSolar.getCurrent_mA() / 1000.0f) : NAN;
     float solarP = inaSolarOk ? (inaSolar.getBusPower() / 1000.0f) : NAN;
@@ -170,10 +229,14 @@ void loop() {
     float battI  = inaBatteryOk ? (inaBattery.getCurrent_mA() / 1000.0f) : NAN;
     float battP  = inaBatteryOk ? (inaBattery.getBusPower() / 1000.0f) : NAN;
 
-    // Cek sisa pulsa Modem 4G & kendalikan Active Buzzer
-    float creditRp = readModemCreditRp();
-    bool lowCredit = (!isnan(creditRp) && creditRp < MODEM_CREDIT_MIN_RP);
-    updateActiveBuzzer(lowCredit);
+    // Ambil sisa kuota (MB) & pulsa (Rp) hasil parsing SMS operator di Modem 4G
+    float quotaMb  = modemReader.getQuotaMb();
+    float creditRp = modemReader.getCreditRp();
+    bool lowQuotaOrCredit =
+      (!isnan(quotaMb) && quotaMb < modemQuotaMinMb) ||
+      (!isnan(creditRp) && creditRp < modemCreditMinRp);
+
+    updateActiveBuzzer(lowQuotaOrCredit);
 
     String payload = "{";
     payload += "\"device_id\":\"" + String(DEVICE_ID) + "\",";
@@ -188,6 +251,7 @@ void loop() {
     payload += "\"battery_voltage\":" + (isnan(battV) ? "null" : String(battV, 2)) + ",";
     payload += "\"battery_current\":" + (isnan(battI) ? "null" : String(battI, 3)) + ",";
     payload += "\"battery_power\":" + (isnan(battP) ? "null" : String(battP, 2)) + ",";
+    payload += "\"modem_quota_mb\":" + (isnan(quotaMb) ? "null" : String(quotaMb, 0)) + ",";
     payload += "\"modem_credit_rp\":" + (isnan(creditRp) ? "null" : String(creditRp, 0)) + ",";
     payload += "\"buzzer_active\":" + String(buzzerActive ? "true" : "false") + ",";
     payload += "\"uptime_seconds\":" + String(millis() / 1000) + ",";
@@ -201,11 +265,18 @@ void loop() {
 
     if (WiFi.status() == WL_CONNECTED) {
       HTTPClient http;
-      http.begin(API_ENDPOINT);
+      String endpoint = String(BASE_API_URL) + "/api/v1/telemetry";
+      http.begin(endpoint);
       http.addHeader("Content-Type", "application/json");
       http.addHeader("X-API-Key", API_KEY);
       int code = http.POST(payload);
+      String resp = http.getString();
       Serial.printf("[HTTP POST] Status code: %d\n", code);
+
+      // Hormati juga perintah buzzer langsung dari server jika ada perubahan batas di Device Management
+      if (code >= 200 && code < 300 && resp.indexOf("\"buzzer_command\":true") >= 0 && !buzzerActive) {
+        updateActiveBuzzer(true);
+      }
       http.end();
     } else {
       Serial.println("[MODEM 4G] Koneksi terputus, mencoba reconnect...");
