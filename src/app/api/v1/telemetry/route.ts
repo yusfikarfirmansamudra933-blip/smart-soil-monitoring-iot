@@ -74,13 +74,18 @@ export async function POST(req: NextRequest) {
     });
 
     const creditMin = Number(config.modem_credit_min_rp ?? 10000);
+    const quotaMinMb = Number(config.modem_quota_min_mb ?? 500);
     const buzzerEnabled = config.buzzer_enabled !== false;
     const isCreditLow =
       normalized.modem_credit_rp !== null &&
       normalized.modem_credit_rp !== undefined &&
       normalized.modem_credit_rp < creditMin;
+    const isQuotaLow =
+      normalized.modem_quota_mb !== null &&
+      normalized.modem_quota_mb !== undefined &&
+      normalized.modem_quota_mb < quotaMinMb;
     const effectiveBuzzerActive = Boolean(
-      normalized.buzzer_active || (buzzerEnabled && isCreditLow)
+      normalized.buzzer_active || (buzzerEnabled && (isCreditLow || isQuotaLow))
     );
 
     // 1. Insert into soil_telemetry
@@ -101,6 +106,7 @@ export async function POST(req: NextRequest) {
         solar_current: normalized.solar_current,
         solar_power: normalized.solar_power,
         charging_status: chargingStatus,
+        modem_quota_mb: normalized.modem_quota_mb ?? null,
         modem_credit_rp: normalized.modem_credit_rp ?? null,
         buzzer_active: effectiveBuzzerActive,
         sensor_status: normalized.sensor_status,
@@ -123,6 +129,7 @@ export async function POST(req: NextRequest) {
         esp32_status: "online",
         modem_status: body.modem_status || "connected",
         signal_rssi: body.signal_rssi ?? -68,
+        modem_quota_mb: normalized.modem_quota_mb ?? null,
         modem_credit_rp: normalized.modem_credit_rp ?? null,
         buzzer_active: effectiveBuzzerActive,
         sensor_ph_status: normalized.sensor_status.ph,

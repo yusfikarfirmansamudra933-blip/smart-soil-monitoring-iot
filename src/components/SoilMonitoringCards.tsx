@@ -345,7 +345,7 @@ export function SoilMonitoringCards({
                     )}
                   </div>
                   <p className="text-xs text-slate-500 dark:text-slate-400">
-                    Sensor DMS Tanah (Tanpa Capacitive Sensor)
+                    Capacitive Soil Moisture Sensor + DMS (ADC1)
                   </p>
                 </div>
               </div>

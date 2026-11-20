@@ -45,6 +45,7 @@ export function AlertsView({
     temp_min_alarm: config.temp_min_alarm,
     temp_max_alarm: config.temp_max_alarm,
     battery_low_alarm: config.battery_low_alarm,
+    modem_quota_min_mb: config.modem_quota_min_mb ?? 500,
     modem_credit_min_rp: config.modem_credit_min_rp ?? 10000,
     buzzer_enabled: config.buzzer_enabled ?? true,
   });
@@ -164,15 +165,23 @@ export function AlertsView({
     },
     {
       id: "modem_credit_low",
-      name: "10. Pulsa Modem Menipis (Active Buzzer)",
-      limit: `< Rp ${form.modem_credit_min_rp.toLocaleString("id-ID")}`,
+      name: "10. Kuota / Pulsa Modem Menipis (Active Buzzer)",
+      limit: `< ${form.modem_quota_min_mb} MB atau < Rp ${form.modem_credit_min_rp.toLocaleString("id-ID")}`,
       triggered:
-        latest?.modem_credit_rp !== null &&
-        latest?.modem_credit_rp !== undefined &&
-        latest.modem_credit_rp < form.modem_credit_min_rp,
+        (latest?.modem_quota_mb !== null &&
+          latest?.modem_quota_mb !== undefined &&
+          latest.modem_quota_mb < form.modem_quota_min_mb) ||
+        (latest?.modem_credit_rp !== null &&
+          latest?.modem_credit_rp !== undefined &&
+          latest.modem_credit_rp < form.modem_credit_min_rp),
       current:
-        latest?.modem_credit_rp !== null &&
-        latest?.modem_credit_rp !== undefined
+        latest?.modem_quota_mb !== null &&
+        latest?.modem_quota_mb !== undefined
+          ? `${latest.modem_quota_mb} MB (Rp ${(latest.modem_credit_rp ?? 0).toLocaleString("id-ID")}) · Buzzer ${
+              latest.buzzer_active ? "ON" : "OFF"
+            }`
+          : latest?.modem_credit_rp !== null &&
+            latest?.modem_credit_rp !== undefined
           ? `Rp ${latest.modem_credit_rp.toLocaleString("id-ID")} · Buzzer ${
               latest.buzzer_active ? "ON" : "OFF"
             }`
@@ -377,9 +386,27 @@ export function AlertsView({
               />
             </div>
 
-            <div className="col-span-2">
+            <div>
               <label className="block font-semibold mb-1">
-                Batas Minimum Pulsa Modem 4G (Rp) — Pemicu Active Buzzer
+                Kuota Modem Minimum (MB)
+              </label>
+              <input
+                type="number"
+                step="50"
+                value={form.modem_quota_min_mb}
+                onChange={(e) =>
+                  setForm({
+                    ...form,
+                    modem_quota_min_mb: Number(e.target.value),
+                  })
+                }
+                className="w-full px-3 py-2 rounded-lg bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700"
+              />
+            </div>
+
+            <div>
+              <label className="block font-semibold mb-1">
+                Pulsa Modem Minimum (Rp)
               </label>
               <input
                 type="number"

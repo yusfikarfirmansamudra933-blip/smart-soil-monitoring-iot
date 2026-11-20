@@ -46,8 +46,9 @@ export interface SoilTelemetryRecord {
   solar_current: number | null; // Dari INA226 #1 (0x40 - Arus Panel Surya)
   solar_power: number | null; // Dari INA226 #1 (0x40 - Daya Panel Surya)
   charging_status: ChargingState | null;
+  modem_quota_mb?: number | null; // Sisa kuota data Modem 4G (MB)
   modem_credit_rp?: number | null; // Sisa pulsa Modem 4G (Rp)
-  buzzer_active?: boolean; // Active Buzzer menyala jika pulsa modem menipis
+  buzzer_active?: boolean; // Active Buzzer menyala jika kuota/pulsa modem menipis
   sensor_status: SensorStatusMap;
   is_demo: boolean;
 }
@@ -61,6 +62,7 @@ export interface SoilDeviceStatus {
   esp32_status: "online" | "offline";
   modem_status: "connected" | "disconnected" | "weak_signal";
   signal_rssi: number | null;
+  modem_quota_mb?: number | null;
   modem_credit_rp?: number | null;
   buzzer_active?: boolean;
   sensor_ph_status: SensorConnectionState;
@@ -89,6 +91,7 @@ export interface SoilDeviceConfig {
   temp_min_alarm: number;
   temp_max_alarm: number;
   battery_low_alarm: number;
+  modem_quota_min_mb?: number;
   modem_credit_min_rp?: number;
   buzzer_enabled?: boolean;
   updated_at?: string;

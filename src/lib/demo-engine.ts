@@ -24,6 +24,7 @@ export const DEFAULT_CONFIG: SoilDeviceConfig = {
   temp_min_alarm: 18.0,
   temp_max_alarm: 34.0,
   battery_low_alarm: 11.8,
+  modem_quota_min_mb: 500,
   modem_credit_min_rp: 10000,
   buzzer_enabled: true,
 };
@@ -131,8 +132,11 @@ export function generateDemoHistory(
           : isDaylight
           ? "Charging"
           : "Discharging",
-      modem_credit_rp: 18500 - (points - 1 - i) * 350,
-      buzzer_active: 18500 - (points - 1 - i) * 350 < 10000,
+      modem_quota_mb: Math.max(120, Math.round(1150 - (points - 1 - i) * 32)),
+      modem_credit_rp: Math.max(2500, 18500 - (points - 1 - i) * 350),
+      buzzer_active:
+        Math.round(1150 - (points - 1 - i) * 32) < 500 ||
+        18500 - (points - 1 - i) * 350 < 10000,
       sensor_status: {
         ph: "online",
         dms: dmsCalibrated ? "online" : "uncalibrated",
@@ -157,6 +161,7 @@ export function generateDemoDeviceStatus(
     esp32_status: "online",
     modem_status: "connected",
     signal_rssi: -67,
+    modem_quota_mb: 380,
     modem_credit_rp: 8500,
     buzzer_active: true,
     sensor_ph_status: "online",
