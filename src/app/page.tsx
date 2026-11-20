@@ -913,30 +913,18 @@ export default function SmartSoilMonitoringApp() {
                 </div>
               </div>
 
-              {/* Three Primary Soil Monitoring Cards */}
-              <SoilMonitoringCards
-                latest={activeLatest}
-                history={activeHistory}
-                deviceStatus={activeDeviceStatus}
-                config={config}
-                isDemo={isDemo}
-                onToggleDmsCalibrated={(cal) =>
-                  handleSaveConfig({ dms_calibrated: cal })
-                }
-              />
-
-              {/* Dedicated Card: Sisa Kuota & Pulsa Modem 4G + Active Buzzer (GPIO 21) */}
+              {/* Dedicated Card: Sisa Kuota & Pulsa Modem 4G + Active Buzzer (GPIO 21) — Placed right at top of Dashboard */}
               <div
-                className={`rounded-2xl border p-6 transition ${
+                className={`rounded-2xl border p-5 sm:p-6 transition ${
                   isBuzzerRinging
                     ? "bg-rose-950/15 dark:bg-rose-950/25 border-rose-500/40"
                     : "bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800"
                 }`}
               >
-                <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 pb-5 border-b border-slate-200/80 dark:border-slate-800">
+                <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 pb-4 border-b border-slate-200/80 dark:border-slate-800">
                   <div className="flex items-start gap-3.5">
                     <div
-                      className={`p-3 rounded-2xl border ${
+                      className={`p-3 rounded-2xl border shrink-0 ${
                         isBuzzerRinging
                           ? "bg-rose-500/20 text-rose-500 border-rose-500/40 animate-pulse"
                           : "bg-emerald-500/15 text-emerald-500 border-emerald-500/30"
@@ -947,7 +935,7 @@ export default function SmartSoilMonitoringApp() {
                     <div>
                       <div className="flex flex-wrap items-center gap-2">
                         <h3 className="font-bold text-base sm:text-lg text-slate-900 dark:text-white">
-                          D. Sisa Kuota &amp; Pulsa Modem 4G LTE
+                          Sisa Kuota &amp; Pulsa Modem 4G LTE
                         </h3>
                         {isDemo && (
                           <span className="px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider rounded bg-amber-500/20 text-amber-600 dark:text-amber-300 border border-amber-500/40">
@@ -1005,7 +993,7 @@ export default function SmartSoilMonitoringApp() {
                   </div>
                 </div>
 
-                <div className="grid grid-cols-1 md:grid-cols-4 gap-4 pt-5">
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3.5 pt-4">
                   {/* 1. Sisa Kuota Data (MB / GB) */}
                   <div className="p-4 rounded-xl bg-slate-50 dark:bg-slate-800/60 border border-slate-200/80 dark:border-slate-700/70 space-y-2">
                     <span className="text-xs font-semibold text-slate-500 block">
@@ -1123,6 +1111,18 @@ export default function SmartSoilMonitoringApp() {
                   </div>
                 </div>
               </div>
+
+              {/* Three Primary Soil Monitoring Cards */}
+              <SoilMonitoringCards
+                latest={activeLatest}
+                history={activeHistory}
+                deviceStatus={activeDeviceStatus}
+                config={config}
+                isDemo={isDemo}
+                onToggleDmsCalibrated={(cal) =>
+                  handleSaveConfig({ dms_calibrated: cal })
+                }
+              />
 
               {/* Quick Bottom Row on Main Dashboard: Energy Summary + Active Alerts */}
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">

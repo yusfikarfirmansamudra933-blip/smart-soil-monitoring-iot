@@ -1,4 +1,4 @@
-const CACHE_NAME = "smart-soil-iot-v1";
+const CACHE_NAME = "smart-soil-iot-v2";
 const APP_SHELL = [
   "/",
   "/manifest.json",
