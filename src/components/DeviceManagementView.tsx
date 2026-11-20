@@ -1,8 +1,9 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import {
   Activity,
+  Bell,
   CheckCircle2,
   Clock,
   Cpu,
@@ -63,6 +64,10 @@ export function DeviceManagementView({
   const [saving, setSaving] = useState(false);
   const [saveMessage, setSaveMessage] = useState<string | null>(null);
 
+  useEffect(() => {
+    setCfg({ ...config });
+  }, [config]);
+
   // Interactive HTTP POST /api/v1/telemetry tester
   const [testPayload, setTestPayload] = useState({
     soil_ph: "6.5",
@@ -70,6 +75,8 @@ export function DeviceManagementView({
     soil_dms_raw: "2150",
     soil_temperature: "28.4",
     battery_voltage: "12.6",
+    modem_quota_mb: "420",
+    modem_credit_rp: "8500",
     ph_status: "online",
     dms_status: "online",
     temp_status: "online",
@@ -117,6 +124,14 @@ export function DeviceManagementView({
             ? null
             : Number(testPayload.soil_temperature),
         battery_voltage: Number(testPayload.battery_voltage),
+        modem_quota_mb:
+          testPayload.modem_quota_mb === ""
+            ? null
+            : Number(testPayload.modem_quota_mb),
+        modem_credit_rp:
+          testPayload.modem_credit_rp === ""
+            ? null
+            : Number(testPayload.modem_credit_rp),
         sensor_status: {
           ph: testPayload.ph_status,
           dms: testPayload.dms_status,
@@ -497,6 +512,90 @@ export function DeviceManagementView({
             </div>
           </div>
 
+          {/* Atur Batas Kuota & Pulsa Modem 4G + Active Buzzer */}
+          <div className="pt-3 border-t border-slate-200 dark:border-slate-800 space-y-3 text-xs">
+            <div className="flex items-center justify-between flex-wrap gap-2">
+              <div className="flex items-center gap-2 font-bold text-slate-900 dark:text-white">
+                <Bell className="w-4 h-4 text-emerald-500" />
+                Atur Batas Kuota Modem 4G &amp; Active Buzzer (GPIO 21)
+              </div>
+              {deviceStatus.modem_quota_mb !== null &&
+                deviceStatus.modem_quota_mb !== undefined && (
+                  <span className="px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border border-emerald-500/30">
+                    Sisa Kuota Saat Ini: {deviceStatus.modem_quota_mb} MB
+                  </span>
+                )}
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <label className="block font-semibold mb-1">
+                  Batas Minimum Kuota Data 4G (MB)
+                </label>
+                <input
+                  type="number"
+                  min={50}
+                  step={50}
+                  value={cfg.modem_quota_min_mb ?? 500}
+                  onChange={(e) =>
+                    setCfg({
+                      ...cfg,
+                      modem_quota_min_mb: Number(e.target.value),
+                    })
+                  }
+                  className="w-full px-3 py-2 rounded-lg bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700"
+                />
+                <p className="text-[11px] text-slate-500 mt-1">
+                  Active Buzzer menyala jika sisa kuota &lt;{" "}
+                  {cfg.modem_quota_min_mb ?? 500} MB
+                </p>
+              </div>
+
+              <div>
+                <label className="block font-semibold mb-1">
+                  Batas Minimum Pulsa Modem 4G (Rp)
+                </label>
+                <input
+                  type="number"
+                  min={0}
+                  step={1000}
+                  value={cfg.modem_credit_min_rp ?? 10000}
+                  onChange={(e) =>
+                    setCfg({
+                      ...cfg,
+                      modem_credit_min_rp: Number(e.target.value),
+                    })
+                  }
+                  className="w-full px-3 py-2 rounded-lg bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700"
+                />
+                <p className="text-[11px] text-slate-500 mt-1">
+                  Active Buzzer menyala jika sisa pulsa &lt; Rp{" "}
+                  {(cfg.modem_credit_min_rp ?? 10000).toLocaleString("id-ID")}
+                </p>
+              </div>
+            </div>
+
+            <label className="flex items-center justify-between p-3 rounded-xl bg-slate-50 dark:bg-slate-800/70 border border-slate-200 dark:border-slate-700 cursor-pointer">
+              <div>
+                <div className="font-bold text-slate-900 dark:text-white">
+                  Aktifkan Active Buzzer Otomatis (GPIO 21)
+                </div>
+                <div className="text-[11px] text-slate-500">
+                  Bunyikan buzzer ESP32-S3 N16R8 otomatis saat kuota atau pulsa
+                  modem 4G berada di bawah batas minimum
+                </div>
+              </div>
+              <input
+                type="checkbox"
+                checked={cfg.buzzer_enabled !== false}
+                onChange={(e) =>
+                  setCfg({ ...cfg, buzzer_enabled: e.target.checked })
+                }
+                className="w-4 h-4 accent-emerald-600"
+              />
+            </label>
+          </div>
+
           <button
             type="submit"
             disabled={saving}
@@ -638,6 +737,40 @@ export function DeviceManagementView({
                   setTestPayload({
                     ...testPayload,
                     battery_voltage: e.target.value,
+                  })
+                }
+                className="w-full px-2.5 py-1.5 rounded-lg bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700"
+              />
+            </div>
+
+            <div>
+              <label className="block font-semibold mb-1">
+                Kuota Modem (MB)
+              </label>
+              <input
+                type="number"
+                value={testPayload.modem_quota_mb}
+                onChange={(e) =>
+                  setTestPayload({
+                    ...testPayload,
+                    modem_quota_mb: e.target.value,
+                  })
+                }
+                className="w-full px-2.5 py-1.5 rounded-lg bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700"
+              />
+            </div>
+            <div>
+              <label className="block font-semibold mb-1">
+                Pulsa Modem (Rp)
+              </label>
+              <input
+                type="number"
+                step="500"
+                value={testPayload.modem_credit_rp}
+                onChange={(e) =>
+                  setTestPayload({
+                    ...testPayload,
+                    modem_credit_rp: e.target.value,
                   })
                 }
                 className="w-full px-2.5 py-1.5 rounded-lg bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700"

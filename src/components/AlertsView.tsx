@@ -45,10 +45,9 @@ export function AlertsView({
     temp_min_alarm: config.temp_min_alarm,
     temp_max_alarm: config.temp_max_alarm,
     battery_low_alarm: config.battery_low_alarm,
-    modem_quota_min_mb: config.modem_quota_min_mb ?? 500,
-    modem_credit_min_rp: config.modem_credit_min_rp ?? 10000,
-    buzzer_enabled: config.buzzer_enabled ?? true,
   });
+  const quotaMinMb = config.modem_quota_min_mb ?? 500;
+  const creditMinRp = config.modem_credit_min_rp ?? 10000;
   const [saving, setSaving] = useState(false);
   const [savedNotice, setSavedNotice] = useState(false);
 
@@ -166,14 +165,14 @@ export function AlertsView({
     {
       id: "modem_credit_low",
       name: "10. Kuota / Pulsa Modem Menipis (Active Buzzer)",
-      limit: `< ${form.modem_quota_min_mb} MB atau < Rp ${form.modem_credit_min_rp.toLocaleString("id-ID")}`,
+      limit: `< ${quotaMinMb} MB atau < Rp ${creditMinRp.toLocaleString("id-ID")}`,
       triggered:
         (latest?.modem_quota_mb !== null &&
           latest?.modem_quota_mb !== undefined &&
-          latest.modem_quota_mb < form.modem_quota_min_mb) ||
+          latest.modem_quota_mb < quotaMinMb) ||
         (latest?.modem_credit_rp !== null &&
           latest?.modem_credit_rp !== undefined &&
-          latest.modem_credit_rp < form.modem_credit_min_rp),
+          latest.modem_credit_rp < creditMinRp),
       current:
         latest?.modem_quota_mb !== null &&
         latest?.modem_quota_mb !== undefined
@@ -385,61 +384,6 @@ export function AlertsView({
                 className="w-full px-3 py-2 rounded-lg bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700"
               />
             </div>
-
-            <div>
-              <label className="block font-semibold mb-1">
-                Kuota Modem Minimum (MB)
-              </label>
-              <input
-                type="number"
-                step="50"
-                value={form.modem_quota_min_mb}
-                onChange={(e) =>
-                  setForm({
-                    ...form,
-                    modem_quota_min_mb: Number(e.target.value),
-                  })
-                }
-                className="w-full px-3 py-2 rounded-lg bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700"
-              />
-            </div>
-
-            <div>
-              <label className="block font-semibold mb-1">
-                Pulsa Modem Minimum (Rp)
-              </label>
-              <input
-                type="number"
-                step="1000"
-                value={form.modem_credit_min_rp}
-                onChange={(e) =>
-                  setForm({
-                    ...form,
-                    modem_credit_min_rp: Number(e.target.value),
-                  })
-                }
-                className="w-full px-3 py-2 rounded-lg bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700"
-              />
-            </div>
-
-            <label className="col-span-2 flex items-center justify-between p-3 rounded-xl bg-slate-50 dark:bg-slate-800/70 border border-slate-200 dark:border-slate-700 cursor-pointer">
-              <div>
-                <div className="font-bold text-slate-900 dark:text-white">
-                  Active Buzzer Otomatis (GPIO 21)
-                </div>
-                <div className="text-[11px] text-slate-500">
-                  Bunyikan buzzer ESP32-S3 saat pulsa modem di bawah batas
-                </div>
-              </div>
-              <input
-                type="checkbox"
-                checked={form.buzzer_enabled}
-                onChange={(e) =>
-                  setForm({ ...form, buzzer_enabled: e.target.checked })
-                }
-                className="w-4 h-4 accent-emerald-600"
-              />
-            </label>
           </div>
 
           <button

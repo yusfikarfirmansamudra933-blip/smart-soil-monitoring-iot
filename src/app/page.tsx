@@ -426,28 +426,6 @@ export default function SmartSoilMonitoringApp() {
       activeDeviceStatus.buzzer_active ??
       (config.buzzer_enabled !== false && isModemQuotaLow)
   );
-  const quotaPercent =
-    modemQuotaMb !== null
-      ? Math.max(0, Math.min(100, Math.round((modemQuotaMb / 2000) * 100)))
-      : null;
-
-  const handleSimulateModemTopup = (lowMode: boolean) => {
-    setDemoHistory((prev) => {
-      if (prev.length === 0) return prev;
-      const last = prev[prev.length - 1];
-      const nextQuota = lowMode ? 340 : 1850;
-      const nextCredit = lowMode ? 7500 : 35000;
-      return [
-        ...prev.slice(0, -1),
-        {
-          ...last,
-          modem_quota_mb: nextQuota,
-          modem_credit_rp: nextCredit,
-          buzzer_active: lowMode,
-        },
-      ];
-    });
-  };
 
   return (
     <div className="min-h-screen flex flex-col lg:flex-row bg-transparent text-slate-900 dark:text-slate-100">
@@ -876,12 +854,15 @@ export default function SmartSoilMonitoringApp() {
                 </div>
 
                 {/* 6. Sisa Kuota Modem 4G & Active Buzzer */}
-                <div
-                  className={`p-4 rounded-2xl border flex items-center gap-3 ${
+                <button
+                  type="button"
+                  onClick={() => setActiveNav("device")}
+                  className={`p-4 rounded-2xl border flex items-center gap-3 text-left transition hover:border-emerald-500/50 ${
                     isBuzzerRinging
                       ? "bg-rose-500/10 border-rose-500/40"
                       : "bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800"
                   }`}
+                  title="Klik untuk atur batas kuota di Device Management"
                 >
                   <div
                     className={`p-2.5 rounded-xl ${
@@ -910,206 +891,7 @@ export default function SmartSoilMonitoringApp() {
                         : "Not Available"}
                     </span>
                   </div>
-                </div>
-              </div>
-
-              {/* Dedicated Card: Sisa Kuota & Pulsa Modem 4G + Active Buzzer (GPIO 21) — Placed right at top of Dashboard */}
-              <div
-                className={`rounded-2xl border p-5 sm:p-6 transition ${
-                  isBuzzerRinging
-                    ? "bg-rose-950/15 dark:bg-rose-950/25 border-rose-500/40"
-                    : "bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800"
-                }`}
-              >
-                <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 pb-4 border-b border-slate-200/80 dark:border-slate-800">
-                  <div className="flex items-start gap-3.5">
-                    <div
-                      className={`p-3 rounded-2xl border shrink-0 ${
-                        isBuzzerRinging
-                          ? "bg-rose-500/20 text-rose-500 border-rose-500/40 animate-pulse"
-                          : "bg-emerald-500/15 text-emerald-500 border-emerald-500/30"
-                      }`}
-                    >
-                      <Radio className="w-6 h-6" />
-                    </div>
-                    <div>
-                      <div className="flex flex-wrap items-center gap-2">
-                        <h3 className="font-bold text-base sm:text-lg text-slate-900 dark:text-white">
-                          Sisa Kuota &amp; Pulsa Modem 4G LTE
-                        </h3>
-                        {isDemo && (
-                          <span className="px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider rounded bg-amber-500/20 text-amber-600 dark:text-amber-300 border border-amber-500/40">
-                            DEMO
-                          </span>
-                        )}
-                        <span
-                          className={`inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-bold border ${
-                            isBuzzerRinging
-                              ? "bg-rose-600 text-white border-rose-500 animate-pulse"
-                              : "bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border-emerald-500/30"
-                          }`}
-                        >
-                          <Bell className="w-3.5 h-3.5" />
-                          {isBuzzerRinging
-                            ? "ACTIVE BUZZER (GPIO 21): BERBUNYI!"
-                            : "ACTIVE BUZZER (GPIO 21): STANDBY"}
-                        </span>
-                      </div>
-                      <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
-                        Monitoring sisa kuota data &amp; pulsa Modem 4G ESP32-S3
-                        N16R8 — Active Buzzer otomatis berbunyi jika kuota &lt;{" "}
-                        {quotaMinMb} MB atau pulsa &lt; Rp{" "}
-                        {creditMinRp.toLocaleString("id-ID")}
-                      </p>
-                    </div>
-                  </div>
-
-                  <div className="flex flex-wrap items-center gap-2">
-                    {isDemo && (
-                      <>
-                        <button
-                          type="button"
-                          onClick={() => handleSimulateModemTopup(true)}
-                          className="px-3 py-1.5 rounded-xl bg-rose-600/15 hover:bg-rose-600 hover:text-white text-rose-500 border border-rose-500/30 text-xs font-bold transition"
-                        >
-                          Simulasi Kuota Tipis (Buzzer ON)
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() => handleSimulateModemTopup(false)}
-                          className="px-3 py-1.5 rounded-xl bg-emerald-600/15 hover:bg-emerald-600 hover:text-white text-emerald-500 border border-emerald-500/30 text-xs font-bold transition"
-                        >
-                          Simulasi Isi Kuota (Buzzer OFF)
-                        </button>
-                      </>
-                    )}
-                    <button
-                      type="button"
-                      onClick={() => setActiveNav("alerts")}
-                      className="px-3.5 py-1.5 rounded-xl bg-slate-900 dark:bg-slate-800 hover:bg-emerald-600 text-white text-xs font-bold transition"
-                    >
-                      Atur Batas Kuota →
-                    </button>
-                  </div>
-                </div>
-
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3.5 pt-4">
-                  {/* 1. Sisa Kuota Data (MB / GB) */}
-                  <div className="p-4 rounded-xl bg-slate-50 dark:bg-slate-800/60 border border-slate-200/80 dark:border-slate-700/70 space-y-2">
-                    <span className="text-xs font-semibold text-slate-500 block">
-                      Sisa Kuota Data 4G
-                    </span>
-                    {modemQuotaMb !== null ? (
-                      <>
-                        <div className="flex items-baseline gap-2">
-                          <span
-                            className={`text-3xl font-extrabold ${
-                              modemQuotaMb < quotaMinMb
-                                ? "text-rose-600 dark:text-rose-400"
-                                : "text-slate-900 dark:text-white"
-                            }`}
-                          >
-                            {modemQuotaMb >= 1024
-                              ? `${(modemQuotaMb / 1024).toFixed(2)} GB`
-                              : `${modemQuotaMb} MB`}
-                          </span>
-                          <span className="text-xs text-slate-400">
-                            ({quotaPercent ?? 0}%)
-                          </span>
-                        </div>
-                        <div className="h-2 w-full rounded-full bg-slate-200 dark:bg-slate-700 overflow-hidden">
-                          <div
-                            className={`h-full rounded-full transition-all ${
-                              modemQuotaMb < quotaMinMb
-                                ? "bg-rose-500"
-                                : modemQuotaMb < quotaMinMb * 1.6
-                                ? "bg-amber-500"
-                                : "bg-emerald-500"
-                            }`}
-                            style={{ width: `${quotaPercent ?? 0}%` }}
-                          />
-                        </div>
-                        <span className="text-[11px] text-slate-400 block">
-                          Batas Minimum Alarm: &lt; {quotaMinMb} MB
-                        </span>
-                      </>
-                    ) : (
-                      <span className="text-base font-bold text-slate-400 block pt-1">
-                        Not Available
-                      </span>
-                    )}
-                  </div>
-
-                  {/* 2. Sisa Pulsa Modem (Rp) */}
-                  <div className="p-4 rounded-xl bg-slate-50 dark:bg-slate-800/60 border border-slate-200/80 dark:border-slate-700/70 space-y-1.5">
-                    <span className="text-xs font-semibold text-slate-500 block">
-                      Sisa Pulsa Kartu SIM 4G
-                    </span>
-                    {modemCreditRp !== null ? (
-                      <>
-                        <div
-                          className={`text-2xl font-extrabold ${
-                            modemCreditRp < creditMinRp
-                              ? "text-rose-600 dark:text-rose-400"
-                              : "text-slate-900 dark:text-white"
-                          }`}
-                        >
-                          Rp {modemCreditRp.toLocaleString("id-ID")}
-                        </div>
-                        <span className="text-[11px] text-slate-400 block">
-                          Batas Minimum: &lt; Rp{" "}
-                          {creditMinRp.toLocaleString("id-ID")}
-                        </span>
-                      </>
-                    ) : (
-                      <span className="text-base font-bold text-slate-400 block pt-1">
-                        Not Available
-                      </span>
-                    )}
-                  </div>
-
-                  {/* 3. Status Active Buzzer */}
-                  <div className="p-4 rounded-xl bg-slate-50 dark:bg-slate-800/60 border border-slate-200/80 dark:border-slate-700/70 space-y-1.5">
-                    <span className="text-xs font-semibold text-slate-500 block">
-                      Status Active Buzzer (GPIO 21)
-                    </span>
-                    <div
-                      className={`text-base font-extrabold flex items-center gap-1.5 ${
-                        isBuzzerRinging
-                          ? "text-rose-600 dark:text-rose-400"
-                          : "text-emerald-600 dark:text-emerald-400"
-                      }`}
-                    >
-                      <Bell className="w-4 h-4" />
-                      {isBuzzerRinging
-                        ? "AKTIF (3× Beep Peringatan)"
-                        : "NONAKTIF (Kuota Aman)"}
-                    </div>
-                    <span className="text-[11px] text-slate-400 block">
-                      {config.buzzer_enabled !== false
-                        ? "Pemicu otomatis aktif di ESP32-S3"
-                        : "Buzzer dimatikan di pengaturan"}
-                    </span>
-                  </div>
-
-                  {/* 4. Kualitas Sinyal & Koneksi 4G */}
-                  <div className="p-4 rounded-xl bg-slate-50 dark:bg-slate-800/60 border border-slate-200/80 dark:border-slate-700/70 space-y-1.5">
-                    <span className="text-xs font-semibold text-slate-500 block">
-                      Jaringan &amp; Sinyal Modem 4G
-                    </span>
-                    <div className="text-base font-extrabold text-slate-900 dark:text-white">
-                      {activeDeviceStatus.modem_status === "connected"
-                        ? `LTE Connected (${
-                            activeDeviceStatus.signal_rssi ?? -67
-                          } dBm)`
-                        : "Modem Disconnected"}
-                    </div>
-                    <span className="text-[11px] text-slate-400 block">
-                      USSD / API Telemetry Sync:{" "}
-                      {activeDeviceStatus.esp32_status.toUpperCase()}
-                    </span>
-                  </div>
-                </div>
+                </button>
               </div>
 
               {/* Three Primary Soil Monitoring Cards */}
