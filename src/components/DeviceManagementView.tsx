@@ -30,7 +30,6 @@ import {
 interface DeviceManagementProps {
   deviceStatus: SoilDeviceStatus;
   config: SoilDeviceConfig;
-  isDemo: boolean;
   onSaveConfig: (
     updatedConfig: Partial<SoilDeviceConfig>,
     identity?: { name: string; location: string; firmware_version: string }
@@ -49,7 +48,6 @@ function formatUptime(sec: number) {
 export function DeviceManagementView({
   deviceStatus,
   config,
-  isDemo,
   onSaveConfig,
   onTriggerRefresh,
 }: DeviceManagementProps) {
@@ -152,7 +150,7 @@ export function DeviceManagementView({
       const json = await res.json();
       if (res.ok) {
         setTestResult(
-          `Sukses (HTTP 201): Data tersimpan ke PostgreSQL (ID: ${json.data?.id}). Silakan beralih ke mode LIVE HARDWARE untuk melihat hasilnya.`
+          `Sukses (HTTP 201): Data tersimpan ke PostgreSQL (ID: ${json.data?.id}).`
         );
         onTriggerRefresh();
       } else {
@@ -208,11 +206,6 @@ export function DeviceManagementView({
               </p>
             </div>
           </div>
-          {isDemo && (
-            <span className="px-2.5 py-1 text-xs font-bold rounded bg-amber-500/20 text-amber-500 border border-amber-500/40">
-              DEMO DEVICE VIEW
-            </span>
-          )}
         </div>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 text-xs">

@@ -34,8 +34,8 @@ const char* DEVICE_ID         = "SOIL-001";
 const char* API_KEY           = "sk_soil_001_esp32_4g_key_2026";
 const char* BASE_API_URL      = "https://smart-soil-monitoring-iot.vercel.app";
 
-const char* MODEM_AP_SSID     = "4G_SMART_SOIL_MODEM";
-const char* MODEM_AP_PASS     = "smartsoil2026";
+const char* MODEM_AP_SSID     = "khusus rakyat miskin";
+const char* MODEM_AP_PASS     = "00000000";
 
 // Pilih metode baca SMS kuota/pulsa dari Modem 4G kartu HP Anda:
 // - MODEM_SMS_HTTP_ZTE    : MiFi Bolt 4G ZTE MF90 (Otomatis deteksi Gateway IP: 192.168.1.1 / 192.168.0.1)
@@ -93,6 +93,7 @@ unsigned long lastSmsPollMs = 0;
 unsigned long sendIntervalMs = 60000;        // 60 detik (disinkronkan dari web)
 const unsigned long SMS_POLL_MS = 120000;    // Cek SMS modem setiap 2 menit
 bool buzzerActive = false;
+bool firstTelemetrySent = false;
 
 void updateActiveBuzzer(bool shouldRing) {
   buzzerActive = buzzerEnabled && shouldRing;
@@ -233,7 +234,8 @@ void loop() {
     syncRemoteDeviceConfig();
   }
 
-  if (millis() - lastSendMs >= sendIntervalMs) {
+  if ((!firstTelemetrySent && WiFi.status() == WL_CONNECTED && millis() > 3000) || (millis() - lastSendMs >= sendIntervalMs)) {
+    firstTelemetrySent = true;
     lastSendMs = millis();
 
     SoilPhReading   ph   = phSensor.read();

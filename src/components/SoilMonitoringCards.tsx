@@ -38,7 +38,6 @@ interface SoilMonitoringProps {
   history: SoilTelemetryRecord[];
   deviceStatus: SoilDeviceStatus;
   config: SoilDeviceConfig;
-  isDemo: boolean;
   detailedView?: boolean;
   onToggleDmsCalibrated?: (calibrated: boolean) => void;
 }
@@ -58,18 +57,12 @@ function formatTime(iso: string | null | undefined) {
   }
 }
 
-function SensorConnectionBadge({
-  status,
-  isDemo,
-}: {
-  status: string;
-  isDemo: boolean;
-}) {
+function SensorConnectionBadge({ status }: { status: string }) {
   if (status === "online") {
     return (
       <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border border-emerald-500/30">
         <CheckCircle2 className="w-3.5 h-3.5" />
-        Sensor Online {isDemo ? "(DEMO)" : ""}
+        Sensor Online
       </span>
     );
   }
@@ -94,7 +87,6 @@ export function SoilMonitoringCards({
   history,
   deviceStatus,
   config,
-  isDemo,
   detailedView = false,
   onToggleDmsCalibrated,
 }: SoilMonitoringProps) {
@@ -160,18 +152,13 @@ export function SoilMonitoringCards({
                     <h3 className="font-bold text-base text-slate-900 dark:text-white">
                       A. Soil pH
                     </h3>
-                    {isDemo && (
-                      <span className="px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider rounded bg-amber-500/20 text-amber-600 dark:text-amber-300 border border-amber-500/40">
-                        DEMO
-                      </span>
-                    )}
                   </div>
                   <p className="text-xs text-slate-500 dark:text-slate-400">
                     Sensor pH Tanah Industrial (Modular Driver)
                   </p>
                 </div>
               </div>
-              <SensorConnectionBadge status={phStatus} isDemo={isDemo} />
+              <SensorConnectionBadge status={phStatus} />
             </div>
 
             {/* Value & Status */}
@@ -338,18 +325,13 @@ export function SoilMonitoringCards({
                     <h3 className="font-bold text-base text-slate-900 dark:text-white">
                       B. Soil Moisture / DMS
                     </h3>
-                    {isDemo && (
-                      <span className="px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider rounded bg-amber-500/20 text-amber-600 dark:text-amber-300 border border-amber-500/40">
-                        DEMO
-                      </span>
-                    )}
                   </div>
                   <p className="text-xs text-slate-500 dark:text-slate-400">
                     Capacitive Soil Moisture Sensor + DMS (ADC1)
                   </p>
                 </div>
               </div>
-              <SensorConnectionBadge status={dmsStatus} isDemo={isDemo} />
+              <SensorConnectionBadge status={dmsStatus} />
             </div>
 
             {/* Value & Calibration Display */}
@@ -541,18 +523,13 @@ export function SoilMonitoringCards({
                     <h3 className="font-bold text-base text-slate-900 dark:text-white">
                       C. Soil Temperature
                     </h3>
-                    {isDemo && (
-                      <span className="px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider rounded bg-amber-500/20 text-amber-600 dark:text-amber-300 border border-amber-500/40">
-                        DEMO
-                      </span>
-                    )}
                   </div>
                   <p className="text-xs text-slate-500 dark:text-slate-400">
                     Sensor DS18B20 Waterproof (OneWire Digital)
                   </p>
                 </div>
               </div>
-              <SensorConnectionBadge status={tempStatus} isDemo={isDemo} />
+              <SensorConnectionBadge status={tempStatus} />
             </div>
 
             {/* Value & Status */}
@@ -717,11 +694,6 @@ export function SoilMonitoringCards({
                 Log Pembacaan Sensor Tanah Terbaru
               </h3>
             </div>
-            {isDemo && (
-              <span className="px-2.5 py-1 text-xs font-bold rounded bg-amber-500/20 text-amber-500 border border-amber-500/30">
-                DATA SIMULASI DEMO
-              </span>
-            )}
           </div>
           <div className="overflow-x-auto">
             <table className="w-full text-left text-xs">

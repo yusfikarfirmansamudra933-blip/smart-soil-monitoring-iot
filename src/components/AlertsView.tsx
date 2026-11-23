@@ -23,7 +23,6 @@ interface AlertsViewProps {
   config: SoilDeviceConfig;
   deviceStatus: SoilDeviceStatus;
   latest: SoilTelemetryRecord | null;
-  isDemo: boolean;
   onAcknowledgeAlert: (id: number) => void;
   onSaveThresholds: (updated: Partial<SoilDeviceConfig>) => Promise<void>;
 }
@@ -33,7 +32,6 @@ export function AlertsView({
   config,
   deviceStatus,
   latest,
-  isDemo,
   onAcknowledgeAlert,
   onSaveThresholds,
 }: AlertsViewProps) {
@@ -216,11 +214,6 @@ export function AlertsView({
               </p>
             </div>
           </div>
-          {isDemo && (
-            <span className="px-2.5 py-1 text-xs font-bold rounded bg-amber-500/20 text-amber-500 border border-amber-500/40">
-              DEMO MODE
-            </span>
-          )}
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-3.5">
@@ -437,11 +430,6 @@ export function AlertsView({
                       >
                         {alert.severity}
                       </span>
-                      {alert.is_demo && (
-                        <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-amber-500/20 text-amber-500 border border-amber-500/30">
-                          DEMO
-                        </span>
-                      )}
                       <h4 className="font-bold text-sm text-slate-900 dark:text-white">
                         {alert.title}
                       </h4>

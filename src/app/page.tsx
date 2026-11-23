@@ -33,12 +33,7 @@ import {
   SoilTelemetryRecord,
   TimeRangeOption,
 } from "@/lib/types";
-import {
-  DEFAULT_CONFIG,
-  generateDemoAlerts,
-  generateDemoDeviceStatus,
-  generateDemoHistory,
-} from "@/lib/demo-engine";
+import { DEFAULT_CONFIG } from "@/lib/default-config";
 import {
   determineChargingStatus,
   estimateBatteryPercentage,
@@ -76,17 +71,10 @@ export default function SmartSoilMonitoringApp() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [darkMode, setDarkMode] = useState(true);
 
-  // Mode: Demo Mode vs Live Hardware Mode
-  // Default to Demo Mode on first visit so all charts/features can be tested immediately,
-  // while clearly labeling all simulated data with "DEMO" and keeping it separate from real hardware data.
-  const [isDemo, setIsDemo] = useState<boolean>(true);
-  const [demoOptionalEnergySensors, setDemoOptionalEnergySensors] =
-    useState<boolean>(true);
-
   const [selectedRange, setSelectedRange] = useState<TimeRangeOption>("24h");
   const [config, setConfig] = useState<SoilDeviceConfig>(DEFAULT_CONFIG);
 
-  // Live Hardware State (strictly separated from Demo State)
+  // Live Hardware State
   const [liveLatest, setLiveLatest] = useState<SoilTelemetryRecord | null>(
     null
   );
@@ -107,12 +95,6 @@ export default function SmartSoilMonitoringApp() {
     is_stale: true,
   });
   const [liveAlerts, setLiveAlerts] = useState<SoilAlertRecord[]>([]);
-
-  // Demo State (strictly marked is_demo = true)
-  const [demoHistory, setDemoHistory] = useState<SoilTelemetryRecord[]>([]);
-  const [demoAlerts, setDemoAlerts] = useState<SoilAlertRecord[]>(() =>
-    generateDemoAlerts()
-  );
 
   // Network & PWA states
   const [isBrowserOffline, setIsBrowserOffline] = useState(false);
@@ -162,88 +144,6 @@ export default function SmartSoilMonitoringApp() {
       );
     };
   }, []);
-
-  // Generate fresh Demo data whenever range, calibration, or optional solar sensors change
-  useEffect(() => {
-    const generated = generateDemoHistory(
-      selectedRange,
-      demoOptionalEnergySensors,
-      config.dms_calibrated
-    );
-    setDemoHistory(generated);
-  }, [selectedRange, demoOptionalEnergySensors, config.dms_calibrated]);
-
-  // Live simulation tick in Demo Mode every 8 seconds
-  useEffect(() => {
-    if (!isDemo) return;
-    const interval = setInterval(() => {
-      setDemoHistory((prev) => {
-        if (prev.length === 0) return prev;
-        const last = prev[prev.length - 1];
-        const nextPh = Number(
-          Math.max(
-            4.8,
-            Math.min(7.9, (last.soil_ph ?? 6.5) + (Math.random() - 0.5) * 0.08)
-          ).toFixed(2)
-        );
-        const nextRawDms = Math.round(
-          Math.max(
-            1450,
-            Math.min(
-              3150,
-              (last.soil_dms_raw ?? 2150) + (Math.random() - 0.5) * 45
-            )
-          )
-        );
-        const nextMoisture = config.dms_calibrated
-          ? Number(
-              Math.max(
-                0,
-                Math.min(100, ((3200 - nextRawDms) / (3200 - 1400)) * 100)
-              ).toFixed(1)
-            )
-          : null;
-        const nextTemp = Number(
-          Math.max(
-            20,
-            Math.min(
-              35,
-              (last.soil_temperature ?? 28.2) + (Math.random() - 0.5) * 0.2
-            )
-          ).toFixed(1)
-        );
-        const nextBatt = Number(
-          Math.max(
-            11.7,
-            Math.min(
-              13.7,
-              (last.battery_voltage ?? 12.6) + (Math.random() - 0.5) * 0.03
-            )
-          ).toFixed(2)
-        );
-
-        const nextPoint: SoilTelemetryRecord = {
-          ...last,
-          id: Date.now(),
-          ts: new Date().toISOString(),
-          soil_ph: nextPh,
-          soil_moisture: nextMoisture,
-          soil_dms_raw: nextRawDms,
-          soil_temperature: nextTemp,
-          battery_voltage: nextBatt,
-          sensor_status: {
-            ph: "online",
-            dms: config.dms_calibrated ? "online" : "uncalibrated",
-            temperature: "online",
-          },
-          is_demo: true,
-        };
-        return [...prev.slice(1), nextPoint];
-      });
-    }, 8000);
-
-    return () => clearInterval(interval);
-  }, [isDemo, config.dms_calibrated]);
 
   // Fetch Real Hardware Data & Config from REST API + Supabase
   const fetchHardwareData = useCallback(async () => {
@@ -343,17 +243,12 @@ export default function SmartSoilMonitoringApp() {
     };
   }, [fetchHardwareData]);
 
-  // Active data based on Demo vs Live Hardware mode
-  const activeHistory = isDemo ? demoHistory : liveHistory;
-  const activeLatest = isDemo
-    ? demoHistory[demoHistory.length - 1] || null
-    : liveDeviceStatus.esp32_status === "online"
-    ? liveLatest
-    : null; // Prevent showing stale data as real-time when ESP32 is offline
-  const activeDeviceStatus = isDemo
-    ? generateDemoDeviceStatus(config.dms_calibrated)
-    : liveDeviceStatus;
-  const activeAlerts = isDemo ? demoAlerts : liveAlerts;
+  // Active Live Hardware Data
+  const activeHistory = liveHistory;
+  const activeLatest =
+    liveDeviceStatus.esp32_status === "online" ? liveLatest : null; // Prevent showing stale data as real-time when ESP32 is offline
+  const activeDeviceStatus = liveDeviceStatus;
+  const activeAlerts = liveAlerts;
 
   const unacknowledgedCount = activeAlerts.filter(
     (a) => !a.acknowledged
@@ -378,12 +273,6 @@ export default function SmartSoilMonitoringApp() {
   };
 
   const handleAcknowledgeAlert = async (id: number) => {
-    if (isDemo) {
-      setDemoAlerts((prev) =>
-        prev.map((a) => (a.id === id ? { ...a, acknowledged: true } : a))
-      );
-      return;
-    }
     await supabase
       .from("soil_alerts")
       .update({ acknowledged: true })
@@ -541,15 +430,9 @@ export default function SmartSoilMonitoringApp() {
                   <h2 className="font-semibold text-base sm:text-lg text-slate-900 dark:text-white">
                     Smart Soil Monitoring IoT
                   </h2>
-                  {isDemo ? (
-                    <span className="px-2 py-0.5 rounded-full text-[10px] font-semibold bg-amber-500/15 text-amber-600 dark:text-amber-400 border border-amber-500/30">
-                      DEMO MODE
-                    </span>
-                  ) : (
-                    <span className="px-2 py-0.5 rounded-full text-[10px] font-semibold bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border border-emerald-500/30">
-                      LIVE HARDWARE
-                    </span>
-                  )}
+                  <span className="px-2 py-0.5 rounded-full text-[10px] font-semibold bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border border-emerald-500/30">
+                    LIVE HARDWARE
+                  </span>
                 </div>
                 <p className="text-xs text-slate-500 dark:text-slate-400 hidden sm:block">
                   {activeDeviceStatus.name} • {activeDeviceStatus.location}
@@ -557,33 +440,8 @@ export default function SmartSoilMonitoringApp() {
               </div>
             </div>
 
-            {/* Right Controls: Demo/Live Switch, PWA Install, Refresh, Theme */}
+            {/* Right Controls: PWA Install, Refresh, Theme */}
             <div className="flex items-center gap-2">
-              {/* Mode Toggle */}
-              <div className="inline-flex rounded-xl bg-slate-100 dark:bg-slate-800 p-1 border border-slate-200 dark:border-slate-700">
-                <button
-                  type="button"
-                  onClick={() => setIsDemo(true)}
-                  className={`px-3 py-1.5 rounded-lg text-xs font-bold transition ${
-                    isDemo
-                      ? "bg-amber-500 text-slate-950 shadow-sm"
-                      : "text-slate-600 dark:text-slate-400"
-                  }`}
-                >
-                  DEMO
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setIsDemo(false)}
-                  className={`px-3 py-1.5 rounded-lg text-xs font-bold transition ${
-                    !isDemo
-                      ? "bg-emerald-600 text-white shadow-sm"
-                      : "text-slate-600 dark:text-slate-400"
-                  }`}
-                >
-                  LIVE ESP32
-                </button>
-              </div>
 
               <button
                 type="button"
@@ -697,55 +555,33 @@ export default function SmartSoilMonitoringApp() {
           {/* Industrial Telemetry Status Ribbon (Always visible on Dashboard) */}
           {activeNav === "dashboard" && (
             <>
-              {/* Demo or Live Hardware Banner */}
-              {isDemo ? (
-                <div className="rounded-2xl bg-amber-500/10 border border-amber-500/30 p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+              {/* Live Hardware Offline Banner */}
+              {liveDeviceStatus.esp32_status !== "online" && (
+                <div className="rounded-2xl bg-rose-500/10 border border-rose-500/30 p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
                   <div className="flex items-center gap-3">
-                    <span className="px-2.5 py-1 rounded-lg bg-amber-500 text-slate-950 font-extrabold text-xs">
-                      DEMO MODE AKTIF
-                    </span>
-                    <p className="text-xs text-slate-700 dark:text-slate-300">
-                      Menampilkan simulasi interaktif berlabel{" "}
-                      <strong>DEMO</strong> untuk pengujian tanpa hardware. Data
-                      simulasi terpisah dari data perangkat nyata.
-                    </p>
+                    <AlertTriangle className="w-5 h-5 text-rose-500 shrink-0" />
+                    <div>
+                      <h4 className="text-xs font-bold text-rose-600 dark:text-rose-400">
+                        Perangkat Keras ESP32 Belum Terhubung / Offline
+                      </h4>
+                      <p className="text-xs text-slate-600 dark:text-slate-400">
+                        Sesuai ketentuan sistem, data lama tidak ditampilkan
+                        seolah-olah real-time dan sensor yang belum
+                        terintegrasi menampilkan status{" "}
+                        <strong>Sensor Not Connected</strong>. Anda dapat
+                        menguji pengiriman data pada menu{" "}
+                        <strong>Device Management</strong>.
+                      </p>
+                    </div>
                   </div>
                   <button
                     type="button"
-                    onClick={() => setIsDemo(false)}
-                    className="px-3.5 py-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold shrink-0 transition"
+                    onClick={() => setActiveNav("device")}
+                    className="px-3.5 py-1.5 rounded-xl bg-slate-900 dark:bg-slate-800 hover:bg-emerald-600 text-white text-xs font-bold shrink-0 transition"
                   >
-                    Beralih ke Perangkat Nyata (ESP32)
+                    Buka Uji Telemetri ESP32
                   </button>
                 </div>
-              ) : (
-                liveDeviceStatus.esp32_status !== "online" && (
-                  <div className="rounded-2xl bg-rose-500/10 border border-rose-500/30 p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-                    <div className="flex items-center gap-3">
-                      <AlertTriangle className="w-5 h-5 text-rose-500 shrink-0" />
-                      <div>
-                        <h4 className="text-xs font-bold text-rose-600 dark:text-rose-400">
-                          Perangkat Keras ESP32 Belum Terhubung / Offline
-                        </h4>
-                        <p className="text-xs text-slate-600 dark:text-slate-400">
-                          Sesuai ketentuan sistem, data lama tidak ditampilkan
-                          seolah-olah real-time dan sensor yang belum
-                          terintegrasi menampilkan status{" "}
-                          <strong>Sensor Not Connected</strong>. Anda dapat
-                          menguji pengiriman data pada menu{" "}
-                          <strong>Device Management</strong>.
-                        </p>
-                      </div>
-                    </div>
-                    <button
-                      type="button"
-                      onClick={() => setActiveNav("device")}
-                      className="px-3.5 py-1.5 rounded-xl bg-slate-900 dark:bg-slate-800 hover:bg-emerald-600 text-white text-xs font-bold shrink-0 transition"
-                    >
-                      Buka Uji Telemetri ESP32
-                    </button>
-                  </div>
-                )
               )}
 
               {/* 7 Industrial Status Indicators Bar */}
@@ -766,8 +602,7 @@ export default function SmartSoilMonitoringApp() {
                       Status ESP32
                     </span>
                     <span className="font-extrabold text-xs uppercase">
-                      {activeDeviceStatus.esp32_status}{" "}
-                      {isDemo ? "(DEMO)" : ""}
+                      {activeDeviceStatus.esp32_status}
                     </span>
                   </div>
                 </div>
@@ -919,7 +754,6 @@ export default function SmartSoilMonitoringApp() {
                 history={activeHistory}
                 deviceStatus={activeDeviceStatus}
                 config={config}
-                isDemo={isDemo}
                 onToggleDmsCalibrated={(cal) =>
                   handleSaveConfig({ dms_calibrated: cal })
                 }
@@ -1025,7 +859,6 @@ export default function SmartSoilMonitoringApp() {
               history={activeHistory}
               deviceStatus={activeDeviceStatus}
               config={config}
-              isDemo={isDemo}
               detailedView={true}
               onToggleDmsCalibrated={(cal) =>
                 handleSaveConfig({ dms_calibrated: cal })
@@ -1040,9 +873,6 @@ export default function SmartSoilMonitoringApp() {
               history={activeHistory}
               deviceStatus={activeDeviceStatus}
               config={config}
-              isDemo={isDemo}
-              demoOptionalEnergySensors={demoOptionalEnergySensors}
-              onToggleDemoEnergySensors={setDemoOptionalEnergySensors}
             />
           )}
 
@@ -1053,7 +883,6 @@ export default function SmartSoilMonitoringApp() {
               selectedRange={selectedRange}
               onSelectRange={setSelectedRange}
               config={config}
-              isDemo={isDemo}
               onRefresh={fetchHardwareData}
             />
           )}
@@ -1065,7 +894,6 @@ export default function SmartSoilMonitoringApp() {
               config={config}
               deviceStatus={activeDeviceStatus}
               latest={activeLatest}
-              isDemo={isDemo}
               onAcknowledgeAlert={handleAcknowledgeAlert}
               onSaveThresholds={(updated) => handleSaveConfig(updated)}
             />
@@ -1076,7 +904,6 @@ export default function SmartSoilMonitoringApp() {
             <DeviceManagementView
               deviceStatus={activeDeviceStatus}
               config={config}
-              isDemo={isDemo}
               onSaveConfig={handleSaveConfig}
               onTriggerRefresh={fetchHardwareData}
             />
@@ -1087,8 +914,6 @@ export default function SmartSoilMonitoringApp() {
             <SettingsView
               darkMode={darkMode}
               onToggleDarkMode={() => setDarkMode(!darkMode)}
-              isDemo={isDemo}
-              onToggleDemoMode={setIsDemo}
               canInstallPwa={Boolean(deferredPrompt)}
               onInstallPwa={handleInstallPwa}
             />

@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { DEFAULT_DEVICE_ID, supabase } from "@/lib/supabase";
-import { DEFAULT_CONFIG } from "@/lib/demo-engine";
+import { DEFAULT_CONFIG } from "@/lib/default-config";
 
 export async function GET(req: NextRequest) {
   const { searchParams } = new URL(req.url);

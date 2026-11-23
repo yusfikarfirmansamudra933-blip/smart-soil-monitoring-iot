@@ -31,7 +31,6 @@ interface HistoryViewProps {
   selectedRange: TimeRangeOption;
   onSelectRange: (range: TimeRangeOption) => void;
   config: SoilDeviceConfig;
-  isDemo: boolean;
   onRefresh: () => void;
 }
 
@@ -48,7 +47,6 @@ export function HistoryAndChartsView({
   selectedRange,
   onSelectRange,
   config,
-  isDemo,
   onRefresh,
 }: HistoryViewProps) {
   const [startDate, setStartDate] = useState<string>("");
@@ -119,7 +117,7 @@ export function HistoryAndChartsView({
     const rows = reversedTable.map((r) => [
       r.ts,
       r.device_id,
-      r.is_demo ? "DEMO" : "HARDWARE",
+      "HARDWARE",
       r.soil_ph ?? "",
       r.soil_moisture ?? "",
       r.soil_dms_raw ?? "",
@@ -139,7 +137,7 @@ export function HistoryAndChartsView({
     link.setAttribute("href", encodedUri);
     link.setAttribute(
       "download",
-      `smart-soil-telemetry-${isDemo ? "DEMO" : "LIVE"}-${selectedRange}.csv`
+      `smart-soil-telemetry-LIVE-${selectedRange}.csv`
     );
     document.body.appendChild(link);
     link.click();
@@ -159,7 +157,7 @@ export function HistoryAndChartsView({
         (r) => `
         <tr>
           <td>${new Date(r.ts).toLocaleString("id-ID")}</td>
-          <td>${r.device_id} ${r.is_demo ? "(DEMO)" : ""}</td>
+          <td>${r.device_id}</td>
           <td>${r.soil_ph !== null ? r.soil_ph.toFixed(2) : "Not Connected"}</td>
           <td>${
             r.soil_moisture !== null
@@ -199,9 +197,7 @@ export function HistoryAndChartsView({
         </head>
         <body>
           <h1>Smart Soil Monitoring IoT — Laporan Riwayat Pengukuran</h1>
-          <p>Rentang Waktu: ${selectedRange.toUpperCase()} | Mode Data: <span class="badge">${
-      isDemo ? "DEMO SIMULATION" : "LIVE HARDWARE"
-    }</span> | Dicetak: ${new Date().toLocaleString("id-ID")}</p>
+          <p>Rentang Waktu: ${selectedRange.toUpperCase()} | Mode Data: <span class="badge">LIVE HARDWARE</span> | Dicetak: ${new Date().toLocaleString("id-ID")}</p>
           <table>
             <thead>
               <tr>
@@ -238,11 +234,6 @@ export function HistoryAndChartsView({
                 <h2 className="text-lg font-bold text-slate-900 dark:text-white">
                   Grafik Interaktif & Riwayat Data Historis
                 </h2>
-                {isDemo && (
-                  <span className="px-2 py-0.5 text-[10px] font-bold rounded bg-amber-500/20 text-amber-500 border border-amber-500/40">
-                    DEMO
-                  </span>
-                )}
               </div>
               <p className="text-xs text-slate-500 dark:text-slate-400">
                 Soil pH • Soil Moisture DMS • Soil Temperature • Battery Voltage
@@ -612,10 +603,7 @@ export function HistoryAndChartsView({
               Tabel Riwayat Pengukuran Lengkap ({reversedTable.length} Baris)
             </h3>
             <p className="text-xs text-slate-500">
-              Menampilkan data{" "}
-              {isDemo
-                ? "Simulasi Berlabel DEMO"
-                : "Perangkat Keras Nyata dari PostgreSQL"}
+              Menampilkan data Perangkat Keras Nyata dari PostgreSQL
             </p>
           </div>
           <div className="flex items-center gap-2 text-xs">
@@ -656,11 +644,6 @@ export function HistoryAndChartsView({
                     </td>
                     <td className="py-3 px-3">
                       <span className="font-semibold">{row.device_id}</span>
-                      {row.is_demo && (
-                        <span className="ml-1.5 px-1.5 py-0.5 text-[10px] font-bold rounded bg-amber-500/20 text-amber-500">
-                          DEMO
-                        </span>
-                      )}
                     </td>
                     <td className="py-3 px-3 font-bold">
                       {row.soil_ph !== null

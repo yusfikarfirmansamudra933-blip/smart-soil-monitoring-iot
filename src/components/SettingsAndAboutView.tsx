@@ -23,8 +23,6 @@ import { DEFAULT_MQTT_CONFIG, getMqttTopics } from "@/lib/mqtt-bridge";
 interface SettingsViewProps {
   darkMode: boolean;
   onToggleDarkMode: () => void;
-  isDemo: boolean;
-  onToggleDemoMode: (val: boolean) => void;
   canInstallPwa: boolean;
   onInstallPwa: () => void;
 }
@@ -32,8 +30,6 @@ interface SettingsViewProps {
 export function SettingsView({
   darkMode,
   onToggleDarkMode,
-  isDemo,
-  onToggleDemoMode,
   canInstallPwa,
   onInstallPwa,
 }: SettingsViewProps) {
@@ -73,30 +69,6 @@ export function SettingsView({
                   <Moon className="w-4 h-4" /> Dark Mode
                 </>
               )}
-            </button>
-          </div>
-
-          {/* Demo vs Live Mode */}
-          <div className="p-4 rounded-xl bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700 flex items-center justify-between">
-            <div>
-              <div className="font-bold text-sm text-slate-900 dark:text-white">
-                Sumber Data Dashboard (Demo vs Perangkat Nyata)
-              </div>
-              <p className="text-xs text-slate-500">
-                Semua data simulasi diberi label DEMO dan dipisahkan dari tabel
-                data perangkat keras nyata.
-              </p>
-            </div>
-            <button
-              type="button"
-              onClick={() => onToggleDemoMode(!isDemo)}
-              className={`px-4 py-2 rounded-xl text-xs font-bold transition ${
-                isDemo
-                  ? "bg-amber-500 text-slate-950 hover:bg-amber-400"
-                  : "bg-emerald-600 text-white hover:bg-emerald-500"
-              }`}
-            >
-              {isDemo ? "Mode Saat Ini: DEMO" : "Mode Saat Ini: LIVE HARDWARE"}
             </button>
           </div>
 

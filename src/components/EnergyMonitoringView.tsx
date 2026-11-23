@@ -36,9 +36,6 @@ interface EnergyMonitoringProps {
   history: SoilTelemetryRecord[];
   deviceStatus: SoilDeviceStatus;
   config: SoilDeviceConfig;
-  isDemo: boolean;
-  demoOptionalEnergySensors: boolean;
-  onToggleDemoEnergySensors: (val: boolean) => void;
 }
 
 export function EnergyMonitoringView({
@@ -46,9 +43,6 @@ export function EnergyMonitoringView({
   history,
   deviceStatus,
   config,
-  isDemo,
-  demoOptionalEnergySensors,
-  onToggleDemoEnergySensors,
 }: EnergyMonitoringProps) {
   const esp32Online = deviceStatus.esp32_status === "online";
 
@@ -121,11 +115,6 @@ export function EnergyMonitoringView({
             <h2 className="text-xl font-bold text-slate-900 dark:text-white">
               Solar & Battery Energy Monitoring
             </h2>
-            {isDemo && (
-              <span className="px-2.5 py-0.5 text-xs font-bold rounded bg-amber-500/20 text-amber-500 border border-amber-500/40">
-                DEMO MODE
-              </span>
-            )}
           </div>
           <p className="text-sm text-slate-500 dark:text-slate-400">
             Spesifikasi Daya: 2× INA226 (Solar <code>0x40</code> &amp; Baterai{" "}
@@ -135,22 +124,6 @@ export function EnergyMonitoringView({
         </div>
 
         <div className="flex flex-wrap items-center gap-3">
-          {isDemo && (
-            <button
-              type="button"
-              onClick={() =>
-                onToggleDemoEnergySensors(!demoOptionalEnergySensors)
-              }
-              className="px-3.5 py-2 rounded-xl text-xs font-semibold border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 hover:border-emerald-500 transition"
-            >
-              Simulasi 2× INA226 (Solar &amp; Baterai):{" "}
-              <span className="text-emerald-500 font-bold">
-                {demoOptionalEnergySensors
-                  ? "Terpasang (0x40 & 0x41)"
-                  : "Tidak Dipasang (Not Available)"}
-              </span>
-            </button>
-          )}
           <div
             className={`px-4 py-2 rounded-xl border text-sm font-bold flex items-center gap-2 ${
               statusBadgeStyle[chargingStatus] ||
@@ -339,11 +312,6 @@ export function EnergyMonitoringView({
               Pemantauan kestabilan suplai daya untuk ESP32 & Modem 4G
             </p>
           </div>
-          {isDemo && (
-            <span className="px-2 py-0.5 text-[10px] font-bold rounded bg-amber-500/20 text-amber-500 border border-amber-500/40">
-              DEMO
-            </span>
-          )}
         </div>
         <div className="h-64 w-full">
           {chartData.length > 0 && batteryVoltage !== null ? (

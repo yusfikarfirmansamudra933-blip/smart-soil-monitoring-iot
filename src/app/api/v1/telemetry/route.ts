@@ -6,7 +6,7 @@ import {
 } from "@/lib/supabase";
 import { normalizeTelemetryPayload } from "@/lib/mqtt-bridge";
 import { convertDmsRawToPercent, determineChargingStatus } from "@/lib/sensor-drivers";
-import { DEFAULT_CONFIG } from "@/lib/demo-engine";
+import { DEFAULT_CONFIG } from "@/lib/default-config";
 
 export async function POST(req: NextRequest) {
   try {

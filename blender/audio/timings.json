@@ -1,0 +1,55 @@
+{
+  "total_dur": 33.61,
+  "total_frames": 1008,
+  "fps": 30,
+  "scenes": {
+    "s1": {
+      "start": 0.35,
+      "vo_end": 4.022,
+      "end": 4.572,
+      "start_frame": 11,
+      "end_frame": 138,
+      "text": "Masih cek pH dan kelembapan tanah secara manual?"
+    },
+    "s2": {
+      "start": 4.572,
+      "vo_end": 8.844,
+      "end": 9.294,
+      "start_frame": 138,
+      "end_frame": 280,
+      "text": "Tenang... kini ada Smart Soil Monitoring I O T!"
+    },
+    "s3": {
+      "start": 9.294,
+      "vo_end": 16.734,
+      "end": 17.184,
+      "start_frame": 280,
+      "end_frame": 517,
+      "text": "Pantau pH tanah, kelembapan D M S, dan suhu D S delapan belas B dua puluh secara real-time."
+    },
+    "s4": {
+      "start": 17.184,
+      "vo_end": 23.04,
+      "end": 23.49,
+      "start_frame": 517,
+      "end_frame": 706,
+      "text": "Mandiri dengan panel surya sepuluh watt dan jaringan empat G, langsung ke HP Anda."
+    },
+    "s5": {
+      "start": 23.49,
+      "vo_end": 26.97,
+      "end": 27.42,
+      "start_frame": 706,
+      "end_frame": 824,
+      "text": "Dari ribet, jadi serba otomatis."
+    },
+    "s6": {
+      "start": 27.42,
+      "vo_end": 32.46,
+      "end": 33.61,
+      "start_frame": 824,
+      "end_frame": 1009,
+      "text": "Smart Soil Monitoring I O T. Pertanian cerdas di genggaman Anda."
+    }
+  }
+}
