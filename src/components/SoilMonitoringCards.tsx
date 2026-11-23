@@ -283,7 +283,7 @@ export function SoilMonitoringCards({
                 </div>
                 <div>
                   <h3 className="font-bold text-base text-slate-900 dark:text-white">
-                    B. Soil Moisture / DMS
+                    B. Soil Moisture
                   </h3>
                 </div>
               </div>
