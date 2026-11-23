@@ -49,6 +49,19 @@ struct SoilTempReading {
   const char* status; // "online" | "not_connected"
 };
 
+// Deteksi pin analog mengambang (tidak terpasang sensor) via pull-down vs pull-up
+inline bool isAnalogPinFloating(uint8_t pin) {
+  pinMode(pin, INPUT_PULLDOWN);
+  delayMicroseconds(250);
+  int lowVal = analogRead(pin);
+  pinMode(pin, INPUT_PULLUP);
+  delayMicroseconds(250);
+  int highVal = analogRead(pin);
+  pinMode(pin, INPUT);
+  delayMicroseconds(100);
+  return (highVal - lowVal) > 2000;
+}
+
 class ModularSoilPhDriver {
 private:
   PhInterfaceMode _mode;
@@ -72,6 +85,9 @@ public:
       return res;
     }
     if (_mode == PH_MODE_ANALOG_ADC) {
+      if (isAnalogPinFloating(_pinOrPort)) {
+        return res; // Pin mengambang / sensor belum terpasang
+      }
       int raw = analogRead(_pinOrPort);
       if (raw <= 5 || raw >= 4090) {
         return res; // Open circuit / not connected
@@ -155,6 +171,9 @@ public:
 
   SoilDmsReading read() {
     SoilDmsReading res = { false, true, NAN, 0, "not_connected" };
+    if (isAnalogPinFloating(_pin)) {
+      return res; // Pin mengambang / sensor belum terpasang
+    }
     int raw = analogRead(_pin);
     if (raw <= 20 || raw >= 4085) {
       return res; // Open circuit / sensor tidak terpasang

@@ -239,14 +239,13 @@ void loop() {
     lastSendMs = millis();
 
     SoilPhReading   ph   = phSensor.read();
-    SoilDmsReading  dms  = dmsSensor.read();
     SoilDmsReading  cap  = capMoistureSensor.read();
     SoilTempReading temp = readDs18b20();
     float hwTempC = temperatureRead();
 
-    float moisturePct = cap.connected ? cap.moisturePercent : dms.moisturePercent;
-    int   rawMoisture = dms.connected ? dms.rawValue : cap.rawValue;
-    const char* moistStatus = cap.connected ? cap.status : dms.status;
+    float moisturePct = cap.connected ? cap.moisturePercent : NAN;
+    int   rawMoisture = cap.connected ? cap.rawValue : 0;
+    const char* moistStatus = cap.status;
 
     float solarV = inaSolarOk ? inaSolar.getBusVoltage_V() : NAN;
     float solarI = inaSolarOk ? (inaSolar.getCurrent_mA() / 1000.0f) : NAN;
@@ -274,7 +273,7 @@ void loop() {
     payload += "\"soil_ph\":" + (isnan(ph.phValue) ? "null" : String(ph.phValue, 2)) + ",";
     payload += "\"soil_ph_raw\":" + (ph.connected ? String(ph.rawValue) : "null") + ",";
     payload += "\"soil_moisture\":" + (isnan(moisturePct) ? "null" : String(moisturePct, 1)) + ",";
-    payload += "\"soil_dms_raw\":" + ((dms.connected || cap.connected) ? String(rawMoisture) : "null") + ",";
+    payload += "\"soil_dms_raw\":" + (cap.connected ? String(rawMoisture) : "null") + ",";
     payload += "\"soil_temperature\":" + (isnan(temp.temperatureC) ? "null" : String(temp.temperatureC, 1)) + ",";
     payload += "\"hardware_temperature\":" + (isnan(hwTempC) ? "null" : String(hwTempC, 1)) + ",";
     payload += "\"solar_voltage\":" + (isnan(solarV) ? "null" : String(solarV, 2)) + ",";

@@ -148,14 +148,9 @@ export function SoilMonitoringCards({
                   <FlaskConical className="w-6 h-6" />
                 </div>
                 <div>
-                  <div className="flex items-center gap-2">
-                    <h3 className="font-bold text-base text-slate-900 dark:text-white">
-                      A. Soil pH
-                    </h3>
-                  </div>
-                  <p className="text-xs text-slate-500 dark:text-slate-400">
-                    Sensor pH Tanah Industrial (Modular Driver)
-                  </p>
+                  <h3 className="font-bold text-base text-slate-900 dark:text-white">
+                    A. Soil pH
+                  </h3>
                 </div>
               </div>
               <SensorConnectionBadge status={phStatus} />
@@ -178,9 +173,6 @@ export function SoilMonitoringCards({
                     Sensor Not Connected
                   </div>
                 )}
-                <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
-                  {phEval.description}
-                </p>
               </div>
               <span
                 className={`px-3 py-1 rounded-lg text-xs font-bold border ${phEval.badgeColor}`}
@@ -267,47 +259,16 @@ export function SoilMonitoringCards({
                 </ResponsiveContainer>
               ) : (
                 <div className="h-full rounded-xl bg-slate-100 dark:bg-slate-800/60 border border-dashed border-slate-300 dark:border-slate-700 flex items-center justify-center text-xs text-slate-500">
-                  Menunggu koneksi & integrasi sensor pH tanah...
+                  Belum ada data
                 </div>
               )}
-            </div>
-
-            {/* Recent History Snippet */}
-            <div className="space-y-1.5 pt-1 border-t border-slate-100 dark:border-slate-800/80">
-              <div className="flex items-center justify-between text-xs font-semibold text-slate-600 dark:text-slate-300">
-                <span>Riwayat Pengukuran Terakhir</span>
-                <span className="font-normal text-slate-400">
-                  Batas Alarm: {config.ph_min_alarm} – {config.ph_max_alarm}
-                </span>
-              </div>
-              <div className="grid grid-cols-3 gap-1.5">
-                {recentRows.slice(0, 3).map((r, idx) => (
-                  <div
-                    key={idx}
-                    className="px-2.5 py-1.5 rounded-lg bg-slate-50 dark:bg-slate-800/60 text-xs flex flex-col"
-                  >
-                    <span className="font-bold text-slate-800 dark:text-slate-200">
-                      {r.soil_ph !== null ? `${r.soil_ph.toFixed(2)} pH` : "N/A"}
-                    </span>
-                    <span className="text-[10px] text-slate-400">
-                      {new Date(r.ts).toLocaleTimeString("id-ID", {
-                        hour: "2-digit",
-                        minute: "2-digit",
-                      })}
-                    </span>
-                  </div>
-                ))}
-              </div>
             </div>
           </div>
 
           <div className="px-5 py-3 bg-slate-50 dark:bg-slate-950/60 border-t border-slate-200 dark:border-slate-800 flex items-center justify-between text-xs text-slate-500 dark:text-slate-400">
             <span className="flex items-center gap-1.5">
               <Clock className="w-3.5 h-3.5 text-emerald-500" />
-              Update: {formatTime(latest?.ts)}
-            </span>
-            <span className="font-mono text-[11px]">
-              Mode: {config.ph_interface_mode}
+              {formatTime(latest?.ts)}
             </span>
           </div>
         </div>
@@ -321,14 +282,9 @@ export function SoilMonitoringCards({
                   <Droplets className="w-6 h-6" />
                 </div>
                 <div>
-                  <div className="flex items-center gap-2">
-                    <h3 className="font-bold text-base text-slate-900 dark:text-white">
-                      B. Soil Moisture / DMS
-                    </h3>
-                  </div>
-                  <p className="text-xs text-slate-500 dark:text-slate-400">
-                    Capacitive Soil Moisture Sensor + DMS (ADC1)
-                  </p>
+                  <h3 className="font-bold text-base text-slate-900 dark:text-white">
+                    B. Soil Moisture / DMS
+                  </h3>
                 </div>
               </div>
               <SensorConnectionBadge status={dmsStatus} />
@@ -343,64 +299,30 @@ export function SoilMonitoringCards({
                     Sensor Not Connected
                   </div>
                 ) : config.dms_calibrated && moisturePct !== null ? (
-                  <div className="space-y-0.5">
-                    <div className="flex items-baseline gap-2">
-                      <span className="text-4xl font-extrabold tracking-tight text-slate-900 dark:text-white">
-                        {moisturePct.toFixed(1)}
-                      </span>
-                      <span className="text-sm font-semibold text-slate-500 dark:text-slate-400">
-                        % RH Tanah
-                      </span>
-                    </div>
-                    <div className="text-xs font-mono text-emerald-600 dark:text-emerald-400">
-                      Nilai Sensor DMS (Raw): {dmsRaw ?? "-"}
-                    </div>
+                  <div className="flex items-baseline gap-2">
+                    <span className="text-4xl font-extrabold tracking-tight text-slate-900 dark:text-white">
+                      {moisturePct.toFixed(1)}
+                    </span>
+                    <span className="text-sm font-semibold text-slate-500 dark:text-slate-400">
+                      %
+                    </span>
                   </div>
                 ) : (
-                  <div className="space-y-0.5">
-                    <div className="flex items-baseline gap-2">
-                      <span className="text-4xl font-extrabold tracking-tight text-indigo-600 dark:text-indigo-400">
-                        {dmsRaw}
-                      </span>
-                      <span className="text-xs font-semibold uppercase px-2 py-0.5 rounded bg-indigo-500/10 text-indigo-500">
-                        RAW DMS VALUE
-                      </span>
-                    </div>
-                    <div className="text-xs text-amber-600 dark:text-amber-400">
-                      Menampilkan nilai mentah sampai proses kalibrasi selesai
-                    </div>
+                  <div className="flex items-baseline gap-2">
+                    <span className="text-4xl font-extrabold tracking-tight text-indigo-600 dark:text-indigo-400">
+                      {dmsRaw}
+                    </span>
+                    <span className="text-xs font-semibold uppercase px-2 py-0.5 rounded bg-indigo-500/10 text-indigo-500">
+                      RAW
+                    </span>
                   </div>
                 )}
-                <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
-                  {moistureEval.description}
-                </p>
               </div>
               <span
                 className={`px-3 py-1 rounded-lg text-xs font-bold border ${moistureEval.badgeColor}`}
               >
                 {moistureEval.label}
               </span>
-            </div>
-
-            {/* Quick toggle between Raw DMS & Calibrated % */}
-            <div className="flex items-center justify-between px-3 py-2 rounded-xl bg-slate-50 dark:bg-slate-800/70 border border-slate-200/80 dark:border-slate-700/70 text-xs">
-              <span className="font-medium text-slate-700 dark:text-slate-300">
-                Mode Output DMS:{" "}
-                <strong>
-                  {config.dms_calibrated
-                    ? "Terkalibrasi (% + Raw)"
-                    : "Data Mentah (Raw Only)"}
-                </strong>
-              </span>
-              {onToggleDmsCalibrated && (
-                <button
-                  type="button"
-                  onClick={() => onToggleDmsCalibrated(!config.dms_calibrated)}
-                  className="px-2.5 py-1 rounded-md font-semibold bg-emerald-600 hover:bg-emerald-500 text-white transition text-[11px]"
-                >
-                  Ubah ke {config.dms_calibrated ? "Raw Mode" : "Kalibrasi %"}
-                </button>
-              )}
             </div>
 
             {/* Mini Chart */}
@@ -461,51 +383,16 @@ export function SoilMonitoringCards({
                 </ResponsiveContainer>
               ) : (
                 <div className="h-full rounded-xl bg-slate-100 dark:bg-slate-800/60 border border-dashed border-slate-300 dark:border-slate-700 flex items-center justify-center text-xs text-slate-500">
-                  Menunggu koneksi & integrasi sensor DMS...
+                  Belum ada data
                 </div>
               )}
-            </div>
-
-            {/* Recent History Snippet */}
-            <div className="space-y-1.5 pt-1 border-t border-slate-100 dark:border-slate-800/80">
-              <div className="flex items-center justify-between text-xs font-semibold text-slate-600 dark:text-slate-300">
-                <span>Riwayat Pengukuran DMS</span>
-                <span className="font-normal text-slate-400">
-                  Dry: {config.dms_raw_dry} | Wet: {config.dms_raw_wet}
-                </span>
-              </div>
-              <div className="grid grid-cols-3 gap-1.5">
-                {recentRows.slice(0, 3).map((r, idx) => (
-                  <div
-                    key={idx}
-                    className="px-2.5 py-1.5 rounded-lg bg-slate-50 dark:bg-slate-800/60 text-xs flex flex-col"
-                  >
-                    <span className="font-bold text-slate-800 dark:text-slate-200">
-                      {config.dms_calibrated && r.soil_moisture !== null
-                        ? `${r.soil_moisture.toFixed(1)}%`
-                        : r.soil_dms_raw !== null
-                        ? `Raw: ${r.soil_dms_raw}`
-                        : "N/A"}
-                    </span>
-                    <span className="text-[10px] text-slate-400">
-                      {new Date(r.ts).toLocaleTimeString("id-ID", {
-                        hour: "2-digit",
-                        minute: "2-digit",
-                      })}
-                    </span>
-                  </div>
-                ))}
-              </div>
             </div>
           </div>
 
           <div className="px-5 py-3 bg-slate-50 dark:bg-slate-950/60 border-t border-slate-200 dark:border-slate-800 flex items-center justify-between text-xs text-slate-500 dark:text-slate-400">
             <span className="flex items-center gap-1.5">
               <Clock className="w-3.5 h-3.5 text-emerald-500" />
-              Update: {formatTime(latest?.ts)}
-            </span>
-            <span className="font-mono text-[11px]">
-              Mode: {config.dms_interface_mode}
+              {formatTime(latest?.ts)}
             </span>
           </div>
         </div>
@@ -519,14 +406,9 @@ export function SoilMonitoringCards({
                   <Thermometer className="w-6 h-6" />
                 </div>
                 <div>
-                  <div className="flex items-center gap-2">
-                    <h3 className="font-bold text-base text-slate-900 dark:text-white">
-                      C. Soil Temperature
-                    </h3>
-                  </div>
-                  <p className="text-xs text-slate-500 dark:text-slate-400">
-                    Sensor DS18B20 Waterproof (OneWire Digital)
-                  </p>
+                  <h3 className="font-bold text-base text-slate-900 dark:text-white">
+                    C. Soil Temperature
+                  </h3>
                 </div>
               </div>
               <SensorConnectionBadge status={tempStatus} />
@@ -549,9 +431,6 @@ export function SoilMonitoringCards({
                     Sensor Not Connected
                   </div>
                 )}
-                <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
-                  {tempEval.description}
-                </p>
               </div>
               <span
                 className={`px-3 py-1 rounded-lg text-xs font-bold border ${tempEval.badgeColor}`}
@@ -638,48 +517,17 @@ export function SoilMonitoringCards({
                 </ResponsiveContainer>
               ) : (
                 <div className="h-full rounded-xl bg-slate-100 dark:bg-slate-800/60 border border-dashed border-slate-300 dark:border-slate-700 flex items-center justify-center text-xs text-slate-500">
-                  Menunggu koneksi sensor DS18B20 Waterproof...
+                  Belum ada data
                 </div>
               )}
-            </div>
-
-            {/* Recent History Snippet */}
-            <div className="space-y-1.5 pt-1 border-t border-slate-100 dark:border-slate-800/80">
-              <div className="flex items-center justify-between text-xs font-semibold text-slate-600 dark:text-slate-300">
-                <span>Riwayat Suhu DS18B20</span>
-                <span className="font-normal text-slate-400">
-                  Batas: {config.temp_min_alarm}°C – {config.temp_max_alarm}°C
-                </span>
-              </div>
-              <div className="grid grid-cols-3 gap-1.5">
-                {recentRows.slice(0, 3).map((r, idx) => (
-                  <div
-                    key={idx}
-                    className="px-2.5 py-1.5 rounded-lg bg-slate-50 dark:bg-slate-800/60 text-xs flex flex-col"
-                  >
-                    <span className="font-bold text-slate-800 dark:text-slate-200">
-                      {r.soil_temperature !== null
-                        ? `${r.soil_temperature.toFixed(1)} °C`
-                        : "N/A"}
-                    </span>
-                    <span className="text-[10px] text-slate-400">
-                      {new Date(r.ts).toLocaleTimeString("id-ID", {
-                        hour: "2-digit",
-                        minute: "2-digit",
-                      })}
-                    </span>
-                  </div>
-                ))}
-              </div>
             </div>
           </div>
 
           <div className="px-5 py-3 bg-slate-50 dark:bg-slate-950/60 border-t border-slate-200 dark:border-slate-800 flex items-center justify-between text-xs text-slate-500 dark:text-slate-400">
             <span className="flex items-center gap-1.5">
               <Clock className="w-3.5 h-3.5 text-emerald-500" />
-              Update: {formatTime(latest?.ts)}
+              {formatTime(latest?.ts)}
             </span>
-            <span className="font-mono text-[11px]">OneWire GPIO 4</span>
           </div>
         </div>
       </div>

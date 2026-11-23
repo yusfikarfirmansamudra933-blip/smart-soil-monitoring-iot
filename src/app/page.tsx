@@ -828,14 +828,9 @@ export default function SmartSoilMonitoringApp() {
                           key={al.id}
                           className="p-3 rounded-xl bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700 flex items-center justify-between text-xs"
                         >
-                          <div>
-                            <span className="font-bold text-slate-900 dark:text-white">
-                              {al.title}
-                            </span>
-                            <p className="text-[11px] text-slate-500">
-                              {al.message}
-                            </p>
-                          </div>
+                          <span className="font-bold text-slate-900 dark:text-white">
+                            {al.title}
+                          </span>
                           <span className="font-mono text-[11px] text-emerald-500 shrink-0 ml-2">
                             {al.metric_value}
                           </span>
