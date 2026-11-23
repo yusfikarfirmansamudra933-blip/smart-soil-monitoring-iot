@@ -240,6 +240,7 @@ void loop() {
     SoilDmsReading  dms  = dmsSensor.read();
     SoilDmsReading  cap  = capMoistureSensor.read();
     SoilTempReading temp = readDs18b20();
+    float hwTempC = temperatureRead();
 
     float moisturePct = cap.connected ? cap.moisturePercent : dms.moisturePercent;
     int   rawMoisture = dms.connected ? dms.rawValue : cap.rawValue;
@@ -273,6 +274,7 @@ void loop() {
     payload += "\"soil_moisture\":" + (isnan(moisturePct) ? "null" : String(moisturePct, 1)) + ",";
     payload += "\"soil_dms_raw\":" + ((dms.connected || cap.connected) ? String(rawMoisture) : "null") + ",";
     payload += "\"soil_temperature\":" + (isnan(temp.temperatureC) ? "null" : String(temp.temperatureC, 1)) + ",";
+    payload += "\"hardware_temperature\":" + (isnan(hwTempC) ? "null" : String(hwTempC, 1)) + ",";
     payload += "\"solar_voltage\":" + (isnan(solarV) ? "null" : String(solarV, 2)) + ",";
     payload += "\"solar_current\":" + (isnan(solarI) ? "null" : String(solarI, 3)) + ",";
     payload += "\"solar_power\":" + (isnan(solarP) ? "null" : String(solarP, 2)) + ",";

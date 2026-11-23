@@ -39,6 +39,7 @@ export interface SoilTelemetryRecord {
   soil_moisture: number | null; // % if calibrated, null if raw-only or disconnected
   soil_dms_raw: number | null; // Raw DMS reading before/alongside calibration
   soil_temperature: number | null; // °C from DS18B20 Waterproof
+  hardware_temperature?: number | null; // °C internal temperature sensor ESP32-S3
   battery_voltage: number | null; // Dari INA226 #2 (0x41 - Baterai)
   battery_current: number | null; // Dari INA226 #2 (0x41 - Arus Baterai)
   battery_power: number | null; // Dari INA226 #2 (0x41 - Daya Baterai)

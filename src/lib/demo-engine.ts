@@ -120,6 +120,7 @@ export function generateDemoHistory(
       soil_moisture: moisturePct,
       soil_dms_raw: dmsRaw,
       soil_temperature: temp,
+      hardware_temperature: Number((41.5 + Math.sin(i * 0.2) * 2.1).toFixed(1)),
       battery_voltage: battV,
       battery_current: battCurrent,
       battery_power: battPower,

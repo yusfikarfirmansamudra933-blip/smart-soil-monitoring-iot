@@ -52,6 +52,7 @@ export function normalizeTelemetryPayload(
     soil_moisture: parseNum(rawPayload.soil_moisture),
     soil_dms_raw: parseNum(rawPayload.soil_dms_raw),
     soil_temperature: parseNum(rawPayload.soil_temperature),
+    hardware_temperature: parseNum(rawPayload.hardware_temperature),
     battery_voltage: parseNum(rawPayload.battery_voltage),
     battery_current: parseNum(rawPayload.battery_current),
     battery_power: parseNum(rawPayload.battery_power),

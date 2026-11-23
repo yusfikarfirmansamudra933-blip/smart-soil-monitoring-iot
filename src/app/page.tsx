@@ -19,6 +19,7 @@ import {
   Settings,
   Sprout,
   Sun,
+  Thermometer,
   WifiOff,
   Wrench,
   X,
@@ -747,8 +748,8 @@ export default function SmartSoilMonitoringApp() {
                 )
               )}
 
-              {/* 6 Industrial Status Indicators Bar */}
-              <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3.5">
+              {/* 7 Industrial Status Indicators Bar */}
+              <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-7 gap-3.5">
                 {/* 1. Status ESP32 */}
                 <div className="p-4 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 flex items-center gap-3">
                   <div
@@ -892,6 +893,24 @@ export default function SmartSoilMonitoringApp() {
                     </span>
                   </div>
                 </button>
+
+                {/* 7. Suhu Hardware (ESP32-S3 Internal Temp) */}
+                <div className="p-4 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 flex items-center gap-3">
+                  <div className="p-2.5 rounded-xl bg-sky-500/15 text-sky-500">
+                    <Thermometer className="w-5 h-5" />
+                  </div>
+                  <div>
+                    <span className="text-[11px] text-slate-500 block">
+                      Suhu Hardware
+                    </span>
+                    <span className="font-extrabold text-xs">
+                      {activeLatest?.hardware_temperature !== null &&
+                      activeLatest?.hardware_temperature !== undefined
+                        ? `${activeLatest.hardware_temperature.toFixed(1)} °C`
+                        : "Not Available"}
+                    </span>
+                  </div>
+                </div>
               </div>
 
               {/* Three Primary Soil Monitoring Cards */}

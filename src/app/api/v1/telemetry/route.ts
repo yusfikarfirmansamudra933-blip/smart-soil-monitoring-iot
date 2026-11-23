@@ -99,6 +99,7 @@ export async function POST(req: NextRequest) {
         soil_moisture: finalMoisture,
         soil_dms_raw: normalized.soil_dms_raw,
         soil_temperature: normalized.soil_temperature,
+        hardware_temperature: normalized.hardware_temperature ?? null,
         battery_voltage: normalized.battery_voltage,
         battery_current: normalized.battery_current,
         battery_power: normalized.battery_power,
