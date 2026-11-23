@@ -162,6 +162,10 @@ void setup() {
   Serial.begin(115200);
   analogReadResolution(12);
 
+  // Matikan LED RGB onboard ESP32-S3 (GPIO 48 / 38) agar tidak menyala putih terus
+  neopixelWrite(48, 0, 0, 0);
+  neopixelWrite(38, 0, 0, 0);
+
   pinMode(PIN_ACTIVE_BUZZER, OUTPUT);
   digitalWrite(PIN_ACTIVE_BUZZER, LOW);
 
