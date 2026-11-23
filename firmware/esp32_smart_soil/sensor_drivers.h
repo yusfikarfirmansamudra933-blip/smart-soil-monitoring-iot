@@ -52,14 +52,14 @@ struct SoilTempReading {
 // Deteksi pin analog mengambang (tidak terpasang sensor) via pull-down vs pull-up
 inline bool isAnalogPinFloating(uint8_t pin) {
   pinMode(pin, INPUT_PULLDOWN);
-  delayMicroseconds(250);
+  delay(2);
   int lowVal = analogRead(pin);
   pinMode(pin, INPUT_PULLUP);
-  delayMicroseconds(250);
+  delay(2);
   int highVal = analogRead(pin);
   pinMode(pin, INPUT);
-  delayMicroseconds(100);
-  return (highVal - lowVal) > 2000;
+  delay(1);
+  return (highVal - lowVal) > 1500;
 }
 
 class ModularSoilPhDriver {
