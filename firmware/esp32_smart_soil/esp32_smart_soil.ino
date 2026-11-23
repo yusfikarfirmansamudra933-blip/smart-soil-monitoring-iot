@@ -22,8 +22,10 @@
 #include <OneWire.h>
 #include <DallasTemperature.h>
 #include <INA226_WE.h>
+#include <time.h>
 #include "sensor_drivers.h"
 #include "modem_quota_reader.h"
+#include "offline_logger.h"
 
 // ============================================================================
 // KONFIGURASI IDENTITAS PERANGKAT, API, & MODEM 4G
@@ -58,8 +60,8 @@ bool  buzzerEnabled    = true;
 
 #define PIN_DS18B20           4     // 1-Wire + Pull-up 4.7kΩ ke 3.3V
 #define PIN_CAP_MOISTURE      5     // Capacitive Soil Moisture (ADC1_CH4)
-#define PIN_SOIL_PH_ADC       6     // Sensor pH Tanah Output Analog ADC (ADC1_CH5)
-#define PIN_SOIL_DMS          7     // Sensor DMS (ADC1_CH6)
+#define PIN_SOIL_PH_ADC       6     // Modul DMS Kabel Ungu/Kuning (D34 di ESP32 -> GPIO 6 ADC1_CH5 di S3)
+#define PIN_DMS_CTRL          7     // Modul DMS Kabel Biru/Hijau (D13 di ESP32 -> GPIO 7 di S3)
 #define PIN_ACTIVE_BUZZER     21    // Active Buzzer (Alarm Kuota/Pulsa Menipis)
 
 #define PIN_MODEM_TX          17    // UART2 TX -> RX Modul 4G (jika pakai MODEM_SMS_UART_AT)
@@ -78,9 +80,12 @@ DallasTemperature ds18b20(&oneWire);
 
 HardwareSerial ModemSerial(2);
 ModemQuotaReader modemReader(MODEM_SMS_MODE, MODEM_ROUTER_IP, MODEM_WEB_PASSWORD, &ModemSerial);
+OfflineTelemetryLogger offlineLogger;
+
+bool ntpSynced = false;
 
 ModularSoilPhDriver  phSensor(PH_MODE_ANALOG_ADC, PIN_SOIL_PH_ADC, 0.0f);
-ModularSoilDmsDriver dmsSensor(DMS_MODE_ANALOG_ADC, PIN_SOIL_DMS, true, 3200, 1400);
+ModularSoilDmsDriver dmsSensor(DMS_MODE_DIGITAL_GPIO, PIN_DMS_CTRL, true, 3200, 1400);
 CapacitiveMoistureDriver capMoistureSensor(PIN_CAP_MOISTURE, 2950, 1250);
 
 unsigned long lastSendMs = 0;
@@ -187,12 +192,31 @@ void setup() {
   phSensor.begin();
   dmsSensor.begin();
   capMoistureSensor.begin();
+  offlineLogger.begin();
 
   Serial.println("[SMART SOIL IoT - ESP32-S3 N16R8] Menghubungkan ke Modem 4G...");
   WiFi.begin(MODEM_AP_SSID, MODEM_AP_PASS);
 }
 
+String getIsoTimestampOrEmpty() {
+  time_t now = time(nullptr);
+  if (now < 1700000000) return "";
+  struct tm tmUtc;
+  gmtime_r(&now, &tmUtc);
+  char buf[28];
+  strftime(buf, sizeof(buf), "%Y-%m-%dT%H:%M:%SZ", &tmUtc);
+  return String(buf);
+}
+
 void loop() {
+  // Sinkronisasi jam NTP sekali setelah WiFi 4G tersambung agar timestamp offline akurat
+  if (!ntpSynced && WiFi.status() == WL_CONNECTED) {
+    configTime(0, 0, "pool.ntp.org", "time.nist.gov");
+    if (time(nullptr) > 1700000000) {
+      ntpSynced = true;
+      Serial.println("[NTP] Waktu UTC tersinkronisasi untuk Offline Logger.");
+    }
+  }
   // Uji manual SMS parser lewat Serial Monitor (ketik contoh SMS operator lalu Enter)
   if (Serial.available()) {
     String testSms = Serial.readStringUntil('\n');
@@ -238,8 +262,12 @@ void loop() {
 
     updateActiveBuzzer(lowQuotaOrCredit);
 
+    String isoTs = getIsoTimestampOrEmpty();
     String payload = "{";
     payload += "\"device_id\":\"" + String(DEVICE_ID) + "\",";
+    if (isoTs.length() > 0) {
+      payload += "\"timestamp\":\"" + isoTs + "\",";
+    }
     payload += "\"soil_ph\":" + (isnan(ph.phValue) ? "null" : String(ph.phValue, 2)) + ",";
     payload += "\"soil_ph_raw\":" + (ph.connected ? String(ph.rawValue) : "null") + ",";
     payload += "\"soil_moisture\":" + (isnan(moisturePct) ? "null" : String(moisturePct, 1)) + ",";
@@ -264,8 +292,14 @@ void loop() {
     Serial.println("[TELEMETRY PAYLOAD] " + payload);
 
     if (WiFi.status() == WL_CONNECTED) {
-      HTTPClient http;
       String endpoint = String(BASE_API_URL) + "/api/v1/telemetry";
+
+      // 1. Kirim data offline yang tertunda di Flash terlebih dahulu (maks 5 per siklus)
+      offlineLogger.flushBatch(endpoint, API_KEY, 5);
+
+      // 2. Kirim data real-time terbaru
+      HTTPClient http;
+      http.setTimeout(6000);
       http.begin(endpoint);
       http.addHeader("Content-Type", "application/json");
       http.addHeader("X-API-Key", API_KEY);
@@ -273,13 +307,18 @@ void loop() {
       String resp = http.getString();
       Serial.printf("[HTTP POST] Status code: %d\n", code);
 
-      // Hormati juga perintah buzzer langsung dari server jika ada perubahan batas di Device Management
-      if (code >= 200 && code < 300 && resp.indexOf("\"buzzer_command\":true") >= 0 && !buzzerActive) {
-        updateActiveBuzzer(true);
+      if (code >= 200 && code < 300) {
+        if (resp.indexOf("\"buzzer_command\":true") >= 0 && !buzzerActive) {
+          updateActiveBuzzer(true);
+        }
+      } else {
+        // Server error / kuota habis -> simpan ke 16MB Flash agar tidak hilang
+        offlineLogger.enqueue(payload);
       }
       http.end();
     } else {
-      Serial.println("[MODEM 4G] Koneksi terputus, mencoba reconnect...");
+      Serial.println("[MODEM 4G] Koneksi terputus! Menyimpan ke Offline Logger Flash & mencoba reconnect...");
+      offlineLogger.enqueue(payload);
       WiFi.reconnect();
     }
   }

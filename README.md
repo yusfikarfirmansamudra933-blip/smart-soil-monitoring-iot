@@ -116,9 +116,12 @@ Agar kedua sensor INA226 dapat berjalan bersamaan pada satu bus I2C tanpa bentro
 |---|---|---|---|
 | **DS18B20 Waterproof** | `VCC` (Merah) / `GND` (Hitam) / `DATA` (Kuning) | `3.3V` / `GND` / **`GPIO 4`** | Wajib pasang resistor **pull-up 4.7 kΩ** antara `GPIO 4` dan `3.3V` |
 | **Capacitive Soil Moisture** | `VCC` / `GND` / `AOUT` | `3.3V` / `GND` / **`GPIO 5`** | `ADC1_CH4` — gunakan suplai 3.3V agar output ≤3.3V |
-| **Sensor pH Tanah (Analog ADC)** | `VCC` / `GND` / `AOUT` | `3.3V` atau `5V`* / `GND` / **`GPIO 6`** | `ADC1_CH5` — *jika output analog >3.3V, gunakan pembagi tegangan* |
-| **Sensor DMS** | `VCC` / `GND` / `OUT` | `3.3V` / `GND` / **`GPIO 7`** | `ADC1_CH6` — pembacaan `Raw Value` + kalibrasi `%` |
-| **Active Buzzer (Alarm Pulsa)** | `VCC / (+)` / `GND / (-)` | **`GPIO 21`** / `GND` | Untuk buzzer 3.3V langsung ke `GPIO 21`; untuk buzzer 5V gunakan modul buzzer 3-pin (VCC 5V, GND, I/O → `GPIO 21`) atau transistor NPN S8050 + resistor 1 kΩ |
+| **Modul DMS (Depoinovasi)** | Kabel 1: `Hitam / Coklat` | **`GND`** | Ground Modul DMS |
+| **Modul DMS (Depoinovasi)** | Kabel 2: `Putih / Merah` | **`3.3V`** | Tegangan suplai `Vin / 3V3` Modul DMS |
+| **Modul DMS + Probe pH** | Kabel 3: `Abu-abu / Oren` | **Kabel `Hitam` Probe pH** | Kabel `Putih` Probe pH disambung langsung ke **`GND` ESP32-S3** |
+| **Modul DMS (ADC pH)** | Kabel 4: `Ungu / Kuning` | **`GPIO 6`** (`ADC1_CH5`) | Pengganti `D34` pada ESP32 biasa (aman dari PSRAM ESP32-S3) |
+| **Modul DMS (Digital/D13)** | Kabel 5: `Biru / Hijau` | **`GPIO 7`** | Pengganti `D13` pada ESP32 biasa |
+| **Active Buzzer (Alarm Pulsa)** | `VCC / (+)` / `GND / (-)` | **`GPIO 21`** / `GND` | Gunakan transistor NPN `S8050` + resistor `1 kΩ` untuk buzzer 5V 2-pin |
 | **Modem 4G (MiFi Bolt ZTE MF90)** | Port Micro-USB `5V` / WiFi AP | `5V DC-DC` / WiFi | Suplai `5V` stabil dari DC-DC Buck Converter; ESP32-S3 konek ke WiFi MiFi ZTE MF90 & baca SMS operator via `192.168.1.1` / `192.168.0.1` |
 
 ---
@@ -129,6 +132,7 @@ File firmware berada di folder `firmware/esp32_smart_soil/`:
 - [esp32_smart_soil.ino](firmware/esp32_smart_soil/esp32_smart_soil.ino)
 - [sensor_drivers.h](firmware/esp32_smart_soil/sensor_drivers.h)
 - [modem_quota_reader.h](firmware/esp32_smart_soil/modem_quota_reader.h) — Pembaca SMS notifikasi kuota & pulsa operator dari Modem 4G kartu SIM
+- [offline_logger.h](firmware/esp32_smart_soil/offline_logger.h) — **Offline Data Logger & Auto-Sync di 16MB Flash (`LittleFS`)** saat sinyal 4G terputus/kuota habis
 
 ### Cara Kerja Pembacaan Sisa Kuota dari SMS MiFi Bolt ZTE MF90
 1. ESP32-S3 terhubung ke WiFi **MiFi Bolt 4G ZTE MF90** lalu otomatis membaca kotak masuk SMS kartu SIM pada WebUI ZTE MF90 (`/goform/goform_get_cmd_process?cmd=sms_data_total`, IP otomatis `192.168.1.1` / `192.168.0.1`) setiap 2 menit melalui `ModemQuotaReader` (lengkap dengan dekoder **UCS2 Hex → Teks** bawaan ZTE).
@@ -169,6 +173,7 @@ const char* MODEM_WEB_PASSWORD          = "admin"; // Password WebUI ZTE MF90 (d
 2. Di menu **Tools**, atur persis sesuai spesifikasi **N16R8**:
    - **Board**: `ESP32S3 Dev Module`
    - **Flash Size**: `16MB (128Mb)`
+   - **Partition Scheme**: `16M Flash (3MB APP/9.9MB FATFS)` *(atau partisi 16MB yang mendukung LittleFS)*
    - **PSRAM**: `OPI PSRAM`
    - **USB CDC On Boot**: `Enabled` *(agar Serial Monitor muncul jika memakai port USB native)*
    - **Upload Speed**: `921600` (atau `115200` jika kurang stabil)
