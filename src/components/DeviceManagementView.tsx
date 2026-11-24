@@ -201,8 +201,8 @@ export function DeviceManagementView({
                 Device Management & Diagnostik Hardware ESP32
               </h2>
               <p className="text-xs text-slate-500">
-                Status real-time mikrokontroler ESP32 DevKit, ketiga sensor
-                tanah, dan modem 4G LTE
+                Status real-time mikrokontroler ESP32-S3 N16R8, ketiga sensor
+                tanah modular, 2× INA226, dan modem 4G LTE
               </p>
             </div>
           </div>

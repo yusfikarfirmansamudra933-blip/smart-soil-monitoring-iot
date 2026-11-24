@@ -100,6 +100,22 @@ export function HistoryAndChartsView({
     page * pageSize
   );
 
+  const sanitizeCsvCell = (val: unknown): string => {
+    const str = String(val ?? "");
+    if (/^[=+\-@\t\r]/.test(str)) {
+      return `'${str}`;
+    }
+    return str.includes(",") ? `"${str.replace(/"/g, '""')}"` : str;
+  };
+
+  const escapeHtml = (val: unknown): string =>
+    String(val ?? "")
+      .replace(/&/g, "&amp;")
+      .replace(/</g, "&lt;")
+      .replace(/>/g, "&gt;")
+      .replace(/"/g, "&quot;")
+      .replace(/'/g, "&#39;");
+
   const handleExportCSV = () => {
     const headers = [
       "Timestamp",
@@ -115,17 +131,17 @@ export function HistoryAndChartsView({
       "Status Sensor Temp",
     ];
     const rows = reversedTable.map((r) => [
-      r.ts,
-      r.device_id,
+      sanitizeCsvCell(r.ts),
+      sanitizeCsvCell(r.device_id),
       "HARDWARE",
       r.soil_ph ?? "",
       r.soil_moisture ?? "",
       r.soil_dms_raw ?? "",
       r.soil_temperature ?? "",
       r.battery_voltage ?? "",
-      r.sensor_status?.ph ?? "",
-      r.sensor_status?.dms ?? "",
-      r.sensor_status?.temperature ?? "",
+      sanitizeCsvCell(r.sensor_status?.ph ?? ""),
+      sanitizeCsvCell(r.sensor_status?.dms ?? ""),
+      sanitizeCsvCell(r.sensor_status?.temperature ?? ""),
     ]);
 
     const csvContent =
@@ -156,14 +172,14 @@ export function HistoryAndChartsView({
       .map(
         (r) => `
         <tr>
-          <td>${new Date(r.ts).toLocaleString("id-ID")}</td>
-          <td>${r.device_id}</td>
+          <td>${escapeHtml(new Date(r.ts).toLocaleString("id-ID"))}</td>
+          <td>${escapeHtml(r.device_id)}</td>
           <td>${r.soil_ph !== null ? r.soil_ph.toFixed(2) : "Not Connected"}</td>
           <td>${
             r.soil_moisture !== null
               ? r.soil_moisture.toFixed(1) + "%"
               : r.soil_dms_raw !== null
-              ? "Raw: " + r.soil_dms_raw
+              ? "Raw: " + escapeHtml(r.soil_dms_raw)
               : "Not Connected"
           }</td>
           <td>${

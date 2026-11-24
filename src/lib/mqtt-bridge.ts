@@ -44,9 +44,11 @@ export function normalizeTelemetryPayload(
 
   return {
     device_id: String(rawPayload.device_id || defaultDeviceId),
-    ts: rawPayload.timestamp
-      ? new Date(String(rawPayload.timestamp)).toISOString()
-      : new Date().toISOString(),
+    ts:
+      rawPayload.timestamp &&
+      !Number.isNaN(Date.parse(String(rawPayload.timestamp)))
+        ? new Date(String(rawPayload.timestamp)).toISOString()
+        : new Date().toISOString(),
     soil_ph: parseNum(rawPayload.soil_ph),
     soil_ph_raw: parseNum(rawPayload.soil_ph_raw),
     soil_moisture: parseNum(rawPayload.soil_moisture),

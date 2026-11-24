@@ -26,7 +26,7 @@ export async function GET(req: NextRequest) {
     .order("ts", { ascending: true })
     .limit(limit);
 
-  if (startDate) {
+  if (startDate && !Number.isNaN(Date.parse(startDate))) {
     query = query.gte("ts", new Date(startDate).toISOString());
   } else {
     const duration = RANGE_MS[range] || RANGE_MS["24h"];
@@ -34,7 +34,7 @@ export async function GET(req: NextRequest) {
     query = query.gte("ts", since);
   }
 
-  if (endDate) {
+  if (endDate && !Number.isNaN(Date.parse(endDate))) {
     query = query.lte("ts", new Date(endDate).toISOString());
   }
 

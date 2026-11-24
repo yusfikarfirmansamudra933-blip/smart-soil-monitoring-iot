@@ -128,6 +128,9 @@ public:
       return res;
     }
     if (_mode == DMS_MODE_ANALOG_ADC) {
+      if (isAnalogPinFloating(_pin)) {
+        return res; // Pin mengambang / sensor DMS belum terpasang
+      }
       int raw = analogRead(_pin);
       if (raw <= 5 || raw >= 4090) {
         return res;

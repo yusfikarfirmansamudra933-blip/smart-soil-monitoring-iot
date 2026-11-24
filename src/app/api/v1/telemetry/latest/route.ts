@@ -24,7 +24,9 @@ export async function GET(req: NextRequest) {
 
   const { data: device } = await supabase
     .from("soil_devices")
-    .select("*")
+    .select(
+      "device_id, name, location, firmware_version, esp32_status, modem_status, signal_rssi, modem_quota_mb, modem_credit_rp, buzzer_active, sensor_ph_status, sensor_dms_status, sensor_temp_status, uptime_seconds, last_seen"
+    )
     .eq("device_id", deviceId)
     .maybeSingle();
 

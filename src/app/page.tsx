@@ -220,8 +220,7 @@ export default function SmartSoilMonitoringApp() {
           const newRow = payload.new as SoilTelemetryRecord;
           if (!newRow.is_demo && newRow.device_id === DEFAULT_DEVICE_ID) {
             setLiveLatest(newRow);
-            setLiveHistory((prev) => [...prev, newRow]);
-            fetchHardwareData();
+            setLiveHistory((prev) => [...prev.slice(-499), newRow]);
           }
         }
       )
@@ -421,9 +420,13 @@ export default function SmartSoilMonitoringApp() {
               <button
                 type="button"
                 onClick={() => setMobileMenuOpen(true)}
-                className="lg:hidden p-2 rounded-lg bg-slate-100/80 dark:bg-white/5 text-slate-700 dark:text-slate-200 border border-slate-200/70 dark:border-white/10"
+                aria-label="Buka Menu Navigasi"
+                className="relative lg:hidden p-2 rounded-lg bg-slate-100/80 dark:bg-white/5 text-slate-700 dark:text-slate-200 border border-slate-200/70 dark:border-white/10"
               >
                 <Menu className="w-5 h-5" />
+                {unacknowledgedCount > 0 && (
+                  <span className="absolute -top-1 -right-1 w-2.5 h-2.5 rounded-full bg-rose-500 ring-2 ring-white dark:ring-slate-900" />
+                )}
               </button>
               <div>
                 <div className="flex items-center gap-2">
@@ -624,7 +627,9 @@ export default function SmartSoilMonitoringApp() {
                     </span>
                     <span className="font-extrabold text-xs uppercase">
                       {activeDeviceStatus.modem_status === "connected"
-                        ? `4G Online (${activeDeviceStatus.signal_rssi ?? -68} dBm)`
+                        ? activeDeviceStatus.signal_rssi !== null
+                          ? `4G Online (${activeDeviceStatus.signal_rssi} dBm)`
+                          : "4G Online"
                         : "Disconnected"}
                     </span>
                   </div>

@@ -1,3 +1,4 @@
+import crypto from "crypto";
 import { NextRequest, NextResponse } from "next/server";
 import {
   DEFAULT_DEVICE_API_KEY,
@@ -8,16 +9,64 @@ import { normalizeTelemetryPayload } from "@/lib/mqtt-bridge";
 import { convertDmsRawToPercent, determineChargingStatus } from "@/lib/sensor-drivers";
 import { DEFAULT_CONFIG } from "@/lib/default-config";
 
+const DEVICE_ID_REGEX = /^[A-Za-z0-9_-]{1,32}$/;
+const rateLimitMap = new Map<string, { count: number; windowStart: number }>();
+const RATE_LIMIT_WINDOW_MS = 60_000;
+const RATE_LIMIT_MAX_REQ = 30;
+
+function isRateLimited(key: string): boolean {
+  const now = Date.now();
+  const entry = rateLimitMap.get(key);
+  if (!entry || now - entry.windowStart > RATE_LIMIT_WINDOW_MS) {
+    rateLimitMap.set(key, { count: 1, windowStart: now });
+    return false;
+  }
+  entry.count += 1;
+  return entry.count > RATE_LIMIT_MAX_REQ;
+}
+
+function verifyApiKey(
+  provided: string | null | undefined,
+  expected: string
+): boolean {
+  if (!provided || !expected) return false;
+  const a = Buffer.from(String(provided));
+  const b = Buffer.from(String(expected));
+  if (a.length !== b.length) return false;
+  return crypto.timingSafeEqual(a, b);
+}
+
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json();
-    const deviceId = String(body.device_id || DEFAULT_DEVICE_ID);
+    const deviceId = String(body.device_id || DEFAULT_DEVICE_ID).trim();
+
+    if (!DEVICE_ID_REGEX.test(deviceId)) {
+      return NextResponse.json(
+        {
+          error: "Bad Request",
+          message:
+            "Format device_id tidak valid (hanya huruf, angka, '-', '_' maks 32 karakter).",
+        },
+        { status: 400 }
+      );
+    }
+
+    if (isRateLimited(deviceId)) {
+      return NextResponse.json(
+        {
+          error: "Too Many Requests",
+          message: "Batas pengiriman telemetri terlampaui. Coba lagi sebentar.",
+        },
+        { status: 429 }
+      );
+    }
 
     // Check API Key from X-API-Key header, Authorization Bearer, or body.api_key
     const headerKey =
       req.headers.get("x-api-key") ||
       req.headers.get("authorization")?.replace(/^Bearer\s+/i, "") ||
-      body.api_key;
+      (typeof body.api_key === "string" ? body.api_key : null);
 
     const { data: deviceRow } = await supabase
       .from("soil_devices")
@@ -26,11 +75,12 @@ export async function POST(req: NextRequest) {
       .maybeSingle();
 
     const expectedKey = deviceRow?.api_key || DEFAULT_DEVICE_API_KEY;
-    if (headerKey && headerKey !== expectedKey) {
+    if (!verifyApiKey(headerKey, expectedKey)) {
       return NextResponse.json(
         {
           error: "Unauthorized",
-          message: "API Key ESP32 tidak valid. Periksa header X-API-Key.",
+          message:
+            "API Key ESP32-S3 wajib disertakan dan valid pada header X-API-Key.",
         },
         { status: 401 }
       );
@@ -123,20 +173,33 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    // 2. Update device status
+    // 2. Update device status (no fake fallback values)
+    const parsedRssi =
+      body.signal_rssi !== undefined &&
+      body.signal_rssi !== null &&
+      Number.isFinite(Number(body.signal_rssi))
+        ? Number(body.signal_rssi)
+        : null;
+    const parsedUptime =
+      body.uptime_seconds !== undefined &&
+      body.uptime_seconds !== null &&
+      Number.isFinite(Number(body.uptime_seconds))
+        ? Math.max(0, Math.floor(Number(body.uptime_seconds)))
+        : 0;
+
     await supabase
       .from("soil_devices")
       .update({
         esp32_status: "online",
         modem_status: body.modem_status || "connected",
-        signal_rssi: body.signal_rssi ?? -68,
+        signal_rssi: parsedRssi,
         modem_quota_mb: normalized.modem_quota_mb ?? null,
         modem_credit_rp: normalized.modem_credit_rp ?? null,
         buzzer_active: effectiveBuzzerActive,
         sensor_ph_status: normalized.sensor_status.ph,
         sensor_dms_status: normalized.sensor_status.dms,
         sensor_temp_status: normalized.sensor_status.temperature,
-        uptime_seconds: body.uptime_seconds ?? 3600,
+        uptime_seconds: parsedUptime,
         last_seen: new Date().toISOString(),
       })
       .eq("device_id", deviceId);
