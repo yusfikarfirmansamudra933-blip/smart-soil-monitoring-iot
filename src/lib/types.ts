@@ -43,9 +43,13 @@ export interface SoilTelemetryRecord {
   battery_voltage: number | null; // Dari INA226 #2 (0x41 - Baterai)
   battery_current: number | null; // Dari INA226 #2 (0x41 - Arus Baterai)
   battery_power: number | null; // Dari INA226 #2 (0x41 - Daya Baterai)
+  battery_energy_wh?: number | null; // Akumulasi pemakaian energi baterai (Wh)
+  battery_remaining_hours?: number | null; // Estimasi sisa waktu nyala baterai 3S (Jam)
   solar_voltage: number | null; // Dari INA226 #1 (0x40 - Panel Surya)
   solar_current: number | null; // Dari INA226 #1 (0x40 - Arus Panel Surya)
   solar_power: number | null; // Dari INA226 #1 (0x40 - Daya Panel Surya)
+  solar_energy_wh?: number | null; // Akumulasi panen energi panel surya (Wh)
+  power_save_mode?: boolean; // Adaptive Power Save (CPU 80MHz + Modem-Sleep)
   charging_status: ChargingState | null;
   modem_quota_mb?: number | null; // Sisa kuota data Modem 4G (MB)
   modem_credit_rp?: number | null; // Sisa pulsa Modem 4G (Rp)

@@ -78,6 +78,9 @@ public:
     }
   }
 
+  void setCalibrationOffset(float offset) { _calOffset = offset; }
+  float getCalibrationOffset() const { return _calOffset; }
+
   SoilPhReading read() {
     SoilPhReading res = { false, NAN, 0, "not_connected" };
     if (_mode == PH_MODE_PENDING_DATASHEET) {
@@ -171,6 +174,13 @@ public:
   void begin() {
     pinMode(_pin, INPUT);
   }
+
+  void setCalibrationBounds(int rawDry, int rawWet) {
+    _rawDry = rawDry;
+    _rawWet = rawWet;
+  }
+  int getRawDry() const { return _rawDry; }
+  int getRawWet() const { return _rawWet; }
 
   SoilDmsReading read() {
     SoilDmsReading res = { false, true, NAN, 0, "not_connected" };

@@ -666,7 +666,7 @@ export default function SmartSoilMonitoringApp() {
                   </div>
                   <div>
                     <span className="text-[11px] text-slate-500 block">
-                      Baterai 12V 7Ah
+                      Baterai 3S Li-ion
                     </span>
                     <span className="font-extrabold text-xs">
                       {activeLatest?.battery_voltage !== null &&

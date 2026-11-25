@@ -17,7 +17,7 @@ export const DEFAULT_CONFIG: SoilDeviceConfig = {
   moisture_max_alarm: 80.0,
   temp_min_alarm: 18.0,
   temp_max_alarm: 34.0,
-  battery_low_alarm: 11.8,
+  battery_low_alarm: 10.8,
   modem_quota_min_mb: 500,
   modem_credit_min_rp: 10000,
   buzzer_enabled: true,

@@ -226,14 +226,14 @@ export function evaluateTemperatureCategory(
 }
 
 /**
- * Estimates 12V 7Ah SLA/VRLA battery percentage from resting/operating voltage.
+ * Estimates 3S Li-ion (9.6V - 12.6V) battery percentage from operating voltage.
  * Returns null if voltage sensor is not available.
  */
 export function estimateBatteryPercentage(voltage: number | null): number | null {
   if (voltage === null || isNaN(voltage)) return null;
-  // Standard 12V 7Ah Lead-Acid (11.5V = 0%, 12.8V+ = 100%)
-  const minV = 11.4;
-  const maxV = 12.85;
+  // 3S Li-ion 18650 Pack (9.6V = 0%, 12.6V = 100%)
+  const minV = 9.6;
+  const maxV = 12.6;
   const pct = ((voltage - minV) / (maxV - minV)) * 100;
   return Math.round(Math.max(0, Math.min(100, pct)));
 }
@@ -249,13 +249,12 @@ export function determineChargingStatus(params: {
   if (params.explicitStatus) return params.explicitStatus;
   if (params.batteryVoltage === null) return "Not Available";
   if (params.batteryVoltage <= params.batteryLowThreshold) return "Battery Low";
-  if (params.batteryVoltage >= 13.6) return "Battery Full";
+  if (params.batteryVoltage >= 12.45) return "Battery Full";
   if (
     params.solarVoltage !== null &&
     params.solarVoltage > params.batteryVoltage + 0.5
   ) {
     return "Charging";
   }
-  if (params.batteryVoltage >= 13.1) return "Charging";
   return "Discharging";
 }

@@ -7,7 +7,6 @@ import {
   BatteryFull,
   BatteryLow,
   Cpu,
-  ShieldAlert,
   Sun,
   Zap,
   ZapOff,
@@ -49,11 +48,15 @@ export function EnergyMonitoringView({
   const batteryVoltage = esp32Online ? latest?.battery_voltage ?? null : null;
   const batteryCurrent = esp32Online ? latest?.battery_current ?? null : null;
   const batteryPower = esp32Online ? latest?.battery_power ?? null : null;
+  const batteryEnergyWh = esp32Online ? latest?.battery_energy_wh ?? null : null;
+  const batteryRemainingHours = esp32Online ? latest?.battery_remaining_hours ?? null : null;
   const batteryPct = estimateBatteryPercentage(batteryVoltage);
 
   const solarVoltage = esp32Online ? latest?.solar_voltage ?? null : null;
   const solarCurrent = esp32Online ? latest?.solar_current ?? null : null;
   const solarPower = esp32Online ? latest?.solar_power ?? null : null;
+  const solarEnergyWh = esp32Online ? latest?.solar_energy_wh ?? null : null;
+  const powerSaveMode = esp32Online ? Boolean(latest?.power_save_mode) : false;
 
   const chargingStatus = determineChargingStatus({
     esp32Online,
@@ -150,35 +153,21 @@ export function EnergyMonitoringView({
         </div>
       </div>
 
-      {/* Strict Notice about No Fake Energy Data */}
-      <div className="rounded-xl bg-emerald-950/20 border border-emerald-500/30 px-4 py-3 flex items-center gap-3 text-xs text-emerald-700 dark:text-emerald-300">
-        <ShieldAlert className="w-4 h-4 shrink-0 text-emerald-500" />
-        <span>
-          <strong>Prinsip Integritas Data Energi:</strong> Sistem tidak membuat
-          data energi palsu. Parameter yang belum memiliki sensor fisik
-          pengukur arus/panel surya ditampilkan secara jujur sebagai{" "}
-          <code className="font-bold">Not Available</code>.
-        </span>
-      </div>
-
-      {/* 8 Energy Metric Cards */}
+      {/* 12 Energy & Coulomb Counting Metric Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         {/* 1. Tegangan Baterai */}
         <div className="p-5 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 space-y-2">
           <div className="flex items-center justify-between text-xs font-semibold text-slate-500">
-            <span>1. Tegangan Baterai (12V 7Ah)</span>
+            <span>1. Tegangan Baterai 3S</span>
             <Battery className="w-4 h-4 text-emerald-500" />
           </div>
           {formatMetric(batteryVoltage, "V")}
-          <p className="text-[11px] text-slate-400">
-            Batas Alarm Lemah: &lt; {config.battery_low_alarm} V
-          </p>
         </div>
 
         {/* 2. Estimasi Persentase Baterai */}
         <div className="p-5 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 space-y-2">
           <div className="flex items-center justify-between text-xs font-semibold text-slate-500">
-            <span>2. Estimasi Kapasitas Baterai</span>
+            <span>2. Kapasitas Baterai</span>
             <BatteryFull className="w-4 h-4 text-emerald-500" />
           </div>
           {batteryPct !== null ? (
@@ -212,29 +201,19 @@ export function EnergyMonitoringView({
         {/* 3. Arus Baterai */}
         <div className="p-5 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 space-y-2">
           <div className="flex items-center justify-between text-xs font-semibold text-slate-500">
-            <span>3. Arus Baterai (INA226 #2)</span>
+            <span>3. Arus Baterai</span>
             <Zap className="w-4 h-4 text-emerald-500" />
           </div>
           {formatMetric(batteryCurrent, "A")}
-          <p className="text-[11px] text-slate-400">
-            {batteryCurrent === null
-              ? "INA226 #2 (0x41) belum terbaca"
-              : "INA226 #2 (I2C 0x41) aktif"}
-          </p>
         </div>
 
         {/* 4. Daya Baterai */}
         <div className="p-5 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 space-y-2">
           <div className="flex items-center justify-between text-xs font-semibold text-slate-500">
-            <span>4. Daya Baterai (INA226 #2)</span>
+            <span>4. Daya Baterai</span>
             <Cpu className="w-4 h-4 text-emerald-500" />
           </div>
           {formatMetric(batteryPower, "W")}
-          <p className="text-[11px] text-slate-400">
-            {batteryPower === null
-              ? "Menunggu pembacaan INA226 #2"
-              : "Kalkulasi V × I (0x41)"}
-          </p>
         </div>
 
         {/* 5. Status Charging */}
@@ -253,51 +232,94 @@ export function EnergyMonitoringView({
               {chargingStatus}
             </span>
           </div>
-          <p className="text-[11px] text-slate-400">
-            Controller: CN3791 MPPT Solar Charge Controller
-          </p>
         </div>
 
         {/* 6. Tegangan Panel Surya */}
         <div className="p-5 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 space-y-2">
           <div className="flex items-center justify-between text-xs font-semibold text-slate-500">
-            <span>6. Tegangan Panel Surya (INA226 #1)</span>
+            <span>6. Tegangan Panel Surya</span>
             <Sun className="w-4 h-4 text-amber-500" />
           </div>
           {formatMetric(solarVoltage, "V")}
-          <p className="text-[11px] text-slate-400">
-            {solarVoltage === null
-              ? "INA226 #1 (0x40) belum terbaca"
-              : "Input PV ke CN3791 MPPT (0x40)"}
-          </p>
         </div>
 
         {/* 7. Arus Panel Surya */}
         <div className="p-5 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 space-y-2">
           <div className="flex items-center justify-between text-xs font-semibold text-slate-500">
-            <span>7. Arus Panel Surya (INA226 #1)</span>
+            <span>7. Arus Panel Surya</span>
             <Sun className="w-4 h-4 text-amber-500" />
           </div>
           {formatMetric(solarCurrent, "A")}
-          <p className="text-[11px] text-slate-400">
-            {solarCurrent === null
-              ? "INA226 #1 (0x40) belum terbaca"
-              : "Arus DC Panel Surya (0x40)"}
-          </p>
         </div>
 
         {/* 8. Daya Panel Surya */}
         <div className="p-5 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 space-y-2">
           <div className="flex items-center justify-between text-xs font-semibold text-slate-500">
-            <span>8. Daya Panel Surya (INA226 #1)</span>
+            <span>8. Daya Panel Surya</span>
             <Zap className="w-4 h-4 text-amber-500" />
           </div>
           {formatMetric(solarPower, "W")}
-          <p className="text-[11px] text-slate-400">
-            {solarPower === null
-              ? "INA226 #1 (0x40) belum terbaca"
-              : "Daya PV real-time (INA226 #1)"}
-          </p>
+        </div>
+
+        {/* 9. Energi Panen Surya (Coulomb Counting) */}
+        <div className="p-5 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 space-y-2">
+          <div className="flex items-center justify-between text-xs font-semibold text-slate-500">
+            <span>9. Energi Panen Surya</span>
+            <Sun className="w-4 h-4 text-amber-500" />
+          </div>
+          {formatMetric(solarEnergyWh, "Wh")}
+        </div>
+
+        {/* 10. Energi Beban Terpakai (Coulomb Counting) */}
+        <div className="p-5 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 space-y-2">
+          <div className="flex items-center justify-between text-xs font-semibold text-slate-500">
+            <span>10. Energi Terpakai</span>
+            <Zap className="w-4 h-4 text-emerald-500" />
+          </div>
+          {formatMetric(batteryEnergyWh, "Wh")}
+        </div>
+
+        {/* 11. Estimasi Sisa Waktu Nyala Baterai */}
+        <div className="p-5 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 space-y-2">
+          <div className="flex items-center justify-between text-xs font-semibold text-slate-500">
+            <span>11. Estimasi Sisa Baterai</span>
+            <Battery className="w-4 h-4 text-sky-500" />
+          </div>
+          {batteryRemainingHours !== null && !isNaN(batteryRemainingHours) ? (
+            <div className="flex items-baseline gap-1.5">
+              <span className="text-3xl font-extrabold text-slate-900 dark:text-white">
+                {batteryRemainingHours.toFixed(1)}
+              </span>
+              <span className="text-sm font-semibold text-slate-500">Jam</span>
+            </div>
+          ) : (
+            <span className="text-base font-bold text-slate-400 dark:text-slate-500 block pt-1">
+              Not Available
+            </span>
+          )}
+        </div>
+
+        {/* 12. Adaptive Power Mode (ESP32-S3 CPU Scaling) */}
+        <div className="p-5 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 space-y-2">
+          <div className="flex items-center justify-between text-xs font-semibold text-slate-500">
+            <span>12. Mode CPU ESP32-S3</span>
+            <Cpu className="w-4 h-4 text-emerald-500" />
+          </div>
+          <div className="pt-1">
+            {!esp32Online ? (
+              <span className="text-base font-bold text-slate-400 dark:text-slate-500">
+                Offline
+              </span>
+            ) : powerSaveMode ? (
+              <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-lg text-sm font-bold border bg-amber-500/15 text-amber-600 dark:text-amber-400 border-amber-500/30">
+                Hemat Daya (80 MHz)
+              </span>
+            ) : (
+              <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-lg text-sm font-bold border bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border-emerald-500/30">
+                Normal (240 MHz)
+              </span>
+            )}
+          </div>
         </div>
       </div>
 
@@ -306,11 +328,8 @@ export function EnergyMonitoringView({
         <div className="flex items-center justify-between">
           <div>
             <h3 className="font-bold text-base text-slate-900 dark:text-white">
-              Grafik Riwayat Tegangan Baterai 12V 7Ah
+              Grafik Riwayat Tegangan Baterai 3S
             </h3>
-            <p className="text-xs text-slate-500">
-              Pemantauan kestabilan suplai daya untuk ESP32 & Modem 4G
-            </p>
           </div>
         </div>
         <div className="h-64 w-full">
