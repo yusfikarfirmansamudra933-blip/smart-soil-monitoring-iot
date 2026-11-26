@@ -102,12 +102,8 @@ public:
       if (_dmsCtrlPin >= 0) {
         digitalWrite((uint8_t)_dmsCtrlPin, LOW);
       }
-      if (isAnalogPinFloating(_pinOrPort)) {
-        return res; // Pin mengambang / modul DMS belum terpasang
-      }
+      // Jangan beri pulsa pull-up/pull-down ke output DMS karena kapasitor RC output DMS sensitif
       int raw = analogRead(_pinOrPort);
-      // Jika DMS terpasang tetapi VCC 3.3V dicabut, IC mati menarik pin secara pasif;
-      // saat DMS aktif normal (3.3V terpasang & GPIO 7 LOW), konversi regresi DMS Depoinovasi (skala 10-bit = raw/4)
       res.connected = true;
       res.rawValue = raw;
       float adc10 = raw / 4.0f;
