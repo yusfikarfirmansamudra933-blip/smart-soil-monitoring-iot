@@ -2,8 +2,8 @@ import { SoilDeviceConfig } from "./types";
 
 export const DEFAULT_CONFIG: SoilDeviceConfig = {
   device_id: "SOIL-001",
-  read_interval_sec: 30,
-  send_interval_sec: 60,
+  read_interval_sec: 2,
+  send_interval_sec: 2,
   timezone: "Asia/Jakarta",
   ph_interface_mode: "analog_adc",
   dms_interface_mode: "analog_adc",

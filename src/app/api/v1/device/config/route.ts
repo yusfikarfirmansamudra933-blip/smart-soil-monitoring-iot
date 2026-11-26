@@ -68,8 +68,8 @@ export async function POST(req: NextRequest) {
 
     const configPayload = {
       device_id: deviceId,
-      read_interval_sec: clamp(Number(body.read_interval_sec ?? 30) || 30, 5, 86400),
-      send_interval_sec: clamp(Number(body.send_interval_sec ?? 60) || 60, 5, 86400),
+      read_interval_sec: clamp(Number(body.read_interval_sec ?? 2) || 2, 1, 86400),
+      send_interval_sec: clamp(Number(body.send_interval_sec ?? 2) || 2, 1, 86400),
       timezone: String(body.timezone || "Asia/Jakarta"),
       ph_interface_mode: String(body.ph_interface_mode || "pending_datasheet"),
       dms_interface_mode: String(body.dms_interface_mode || "pending_datasheet"),

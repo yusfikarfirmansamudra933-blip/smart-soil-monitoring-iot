@@ -124,7 +124,7 @@ TaskHandle_t core0TaskHandle = nullptr;
 bool ntpSynced = false;
 unsigned long lastSendMs = 0;
 unsigned long lastSmsPollMs = 0;
-unsigned long sendIntervalMs = 60000;
+unsigned long sendIntervalMs = 2000;         // Pengiriman real-time setiap 2 detik
 const unsigned long SMS_POLL_MS = 120000;
 bool buzzerActive = false;
 bool firstTelemetrySent = false;
@@ -288,7 +288,7 @@ void syncRemoteDeviceConfig() {
     float bLow = extractJsonNumber(body, "battery_low_alarm", batteryLowAlarmV);
     if (qMin > 0) modemQuotaMinMb = qMin;
     if (cMin >= 0) modemCreditMinRp = cMin;
-    if (sendSec >= 10) sendIntervalMs = (unsigned long)sendSec * 1000UL;
+    if (sendSec >= 1) sendIntervalMs = (unsigned long)(sendSec * 1000.0f);
     if (bLow >= 9.0f && bLow <= 13.0f) batteryLowAlarmV = bLow;
     if (body.indexOf("\"buzzer_enabled\":false") >= 0) buzzerEnabled = false;
     else if (body.indexOf("\"buzzer_enabled\":true") >= 0) buzzerEnabled = true;
@@ -501,11 +501,11 @@ void loop() {
     if (WiFi.status() == WL_CONNECTED) {
       String endpoint = String(BASE_API_URL) + "/api/v1/telemetry";
 
-      offlineLogger.flushBatch(endpoint, API_KEY, 5);
+      offlineLogger.flushBatch(endpoint, API_KEY, 2);
       feedHardwareWatchdog();
 
       HTTPClient http;
-      http.setTimeout(6000);
+      http.setTimeout(3500);
       http.begin(endpoint);
       http.addHeader("Content-Type", "application/json");
       http.addHeader("X-API-Key", API_KEY);
