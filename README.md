@@ -92,18 +92,16 @@ Aplikasi web profesional bergaya **Industrial IoT** untuk memantau kondisi tanah
 | Baterai (`-`) | **CN3791** `BAT-` (`GND`) & Common Ground | Semua `GND` (CN3791, 2× INA226, ESP32-S3, Modem 4G) wajib tersambung |
 | Output DC-DC 5V (`5V` / `GND`) | Pin `5V` ESP32-S3 N16R8 & Daya `5V` Modem 4G | Pastikan output stabil **5.0V (≥ 2A)** sebelum disambung |
 
-### B. Wiring I2C & Alamat 2× INA226 ke ESP32-S3 N16R8
-Agar kedua sensor INA226 dapat berjalan bersamaan pada satu bus I2C tanpa bentrok alamat:
+### B. Wiring Dual Bus I2C 2× INA226 ke ESP32-S3 N16R8 (Tanpa Jumper `A0`)
+Kedua modul INA226 tetap memakai alamat standar `0x40` dengan memanfaatkan 2 jalur Hardware I2C terpisah pada ESP32-S3 (`Wire` & `Wire1`):
 
-| Pin INA226 | INA226 #1 — Panel Surya (`0x40`) | INA226 #2 — Baterai (`0x41`) |
+| Pin INA226 | INA226 #1 — Panel Surya (`Wire` / `0x40`) | INA226 #2 — Baterai 3S (`Wire1` / `0x40`) |
 |---|---|---|
 | `VCC` | `3.3V` ESP32-S3 | `3.3V` ESP32-S3 |
 | `GND` | `GND` ESP32-S3 | `GND` ESP32-S3 |
-| `SDA` | `GPIO 8` ESP32-S3 | `GPIO 8` ESP32-S3 *(paralel)* |
-| `SCL` | `GPIO 9` ESP32-S3 | `GPIO 9` ESP32-S3 *(paralel)* |
-| `A0` | Sambung ke `GND` | Sambung ke `3.3V` (`VS`) → alamat menjadi **`0x41`** |
-| `A1` | Sambung ke `GND` | Sambung ke `GND` |
-| `VBUS` | Sambung ke `VIN+` (PV+) | Sambung ke `VIN+` (BAT+) |
+| `SDA` | **`GPIO 8`** ESP32-S3 | **`GPIO 10`** ESP32-S3 |
+| `SCL` | **`GPIO 9`** ESP32-S3 | **`GPIO 11`** ESP32-S3 |
+| `VBS` (`VBUS`) | Sambung ke `IN-` / `IN+` (PV+) | Sambung ke `IN-` / `IN+` (BAT+) |
 
 ---
 

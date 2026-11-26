@@ -52,10 +52,12 @@ bool  buzzerEnabled    = true;
 // PIN MAPPING ESP32-S3 N16R8 (AMAN DARI OPI PSRAM GPIO 35/36/37)
 // ============================================================================
 #define PIN_BOOT_BUTTON       0     // Tombol BOOT bawaan board (Tahan 3 dtk -> Portal WiFi)
-#define PIN_I2C_SDA           8
-#define PIN_I2C_SCL           9
-#define INA226_ADDR_SOLAR     0x40  // A0=GND, A1=GND  -> Panel Surya
-#define INA226_ADDR_BATTERY   0x41  // A0=3.3V, A1=GND -> Baterai 3S Li-ion
+// Dua Bus Hardware I2C Terpisah (Tanpa Perlu Jumper A0, Keduanya Pakai Alamat Default 0x40)
+#define PIN_SOLAR_SDA         8     // Bus I2C #0 (Wire)  SDA -> INA226 Panel Surya (0x40)
+#define PIN_SOLAR_SCL         9     // Bus I2C #0 (Wire)  SCL -> INA226 Panel Surya (0x40)
+#define PIN_BATT_SDA          10    // Bus I2C #1 (Wire1) SDA -> INA226 Baterai 3S  (0x40)
+#define PIN_BATT_SCL          11    // Bus I2C #1 (Wire1) SCL -> INA226 Baterai 3S  (0x40)
+#define INA226_DEFAULT_ADDR   0x40
 
 #define PIN_DS18B20           4     // 1-Wire + Pull-up 4.7kΩ ke 3.3V
 #define PIN_CAP_MOISTURE      5     // Capacitive Soil Moisture (ADC1_CH4)
@@ -69,8 +71,8 @@ bool  buzzerEnabled    = true;
 // ============================================================================
 // OBJEK DRIVER, PSRAM FILTER, COULOMB METER, PORTAL, & DUAL-CORE STATE
 // ============================================================================
-INA226_WE inaSolar   = INA226_WE(INA226_ADDR_SOLAR);
-INA226_WE inaBattery = INA226_WE(INA226_ADDR_BATTERY);
+INA226_WE inaSolar   = INA226_WE(&Wire, INA226_DEFAULT_ADDR);
+INA226_WE inaBattery = INA226_WE(&Wire1, INA226_DEFAULT_ADDR);
 bool inaSolarOk   = false;
 bool inaBatteryOk = false;
 
@@ -210,18 +212,46 @@ void sensorCore0Task(void* pvParameters) {
       psramMoistFilter.reset();
     }
 
+    // Auto Hot-Plug Re-Init tiap 3 detik jika INA226 dipasang saat ESP32 sudah menyala
+    if (tickCounter % 30 == 0) {
+      if (!inaSolarOk) {
+        inaSolarOk = inaSolar.init();
+        if (inaSolarOk) inaSolar.setResistorRange(0.1, 0.8);
+      }
+      if (!inaBatteryOk) {
+        inaBatteryOk = inaBattery.init();
+        if (inaBatteryOk) inaBattery.setResistorRange(0.1, 0.8);
+      }
+    }
+
     float sV = NAN, sI = NAN, sP = NAN;
     if (inaSolarOk) {
-      sV = psramSolarVFilter.pushAndFilter(inaSolar.getBusVoltage_V());
-      sI = psramSolarIFilter.pushAndFilter(inaSolar.getCurrent_mA() / 1000.0f);
-      sP = psramSolarPFilter.pushAndFilter(inaSolar.getBusPower() / 1000.0f);
+      float rawSV = inaSolar.getBusVoltage_V();
+      if (inaSolar.getI2cErrorCode() != 0) {
+        inaSolarOk = false;
+        psramSolarVFilter.reset();
+        psramSolarIFilter.reset();
+        psramSolarPFilter.reset();
+      } else {
+        sV = psramSolarVFilter.pushAndFilter(rawSV);
+        sI = psramSolarIFilter.pushAndFilter(inaSolar.getCurrent_mA() / 1000.0f);
+        sP = psramSolarPFilter.pushAndFilter(inaSolar.getBusPower() / 1000.0f);
+      }
     }
 
     float bV = NAN, bI = NAN, bP = NAN;
     if (inaBatteryOk) {
-      bV = psramBattVFilter.pushAndFilter(inaBattery.getBusVoltage_V());
-      bI = psramBattIFilter.pushAndFilter(inaBattery.getCurrent_mA() / 1000.0f);
-      bP = psramBattPFilter.pushAndFilter(inaBattery.getBusPower() / 1000.0f);
+      float rawBV = inaBattery.getBusVoltage_V();
+      if (inaBattery.getI2cErrorCode() != 0) {
+        inaBatteryOk = false;
+        psramBattVFilter.reset();
+        psramBattIFilter.reset();
+        psramBattPFilter.reset();
+      } else {
+        bV = psramBattVFilter.pushAndFilter(rawBV);
+        bI = psramBattIFilter.pushAndFilter(inaBattery.getCurrent_mA() / 1000.0f);
+        bP = psramBattPFilter.pushAndFilter(inaBattery.getBusPower() / 1000.0f);
+      }
     }
 
     // Integrasi energi Wh & estimasi jam nyala baterai setiap 100 ms
@@ -337,22 +367,23 @@ void setup() {
   }
   modemReader.begin();
 
-  Wire.begin(PIN_I2C_SDA, PIN_I2C_SCL);
+  Wire.begin(PIN_SOLAR_SDA, PIN_SOLAR_SCL);
+  Wire1.begin(PIN_BATT_SDA, PIN_BATT_SCL);
 
   inaSolarOk = inaSolar.init();
   if (inaSolarOk) {
     inaSolar.setResistorRange(0.1, 0.8);
-    Serial.println("[INA226 #1] Panel Surya (0x40) OK");
+    Serial.println("[INA226 #1] Panel Surya (I2C0 GPIO 8/9, 0x40) OK");
   } else {
-    Serial.println("[INA226 #1] Panel Surya (0x40) TIDAK TERDETEKSI");
+    Serial.println("[INA226 #1] Panel Surya (I2C0 GPIO 8/9, 0x40) TIDAK TERDETEKSI");
   }
 
   inaBatteryOk = inaBattery.init();
   if (inaBatteryOk) {
     inaBattery.setResistorRange(0.1, 0.8);
-    Serial.println("[INA226 #2] Baterai (0x41) OK");
+    Serial.println("[INA226 #2] Baterai (I2C1 GPIO 10/11, 0x40) OK");
   } else {
-    Serial.println("[INA226 #2] Baterai (0x41) TIDAK TERDETEKSI");
+    Serial.println("[INA226 #2] Baterai (I2C1 GPIO 10/11, 0x40) TIDAK TERDETEKSI");
   }
 
   ds18b20.begin();
