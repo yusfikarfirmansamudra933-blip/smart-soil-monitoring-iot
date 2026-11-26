@@ -49,7 +49,8 @@ struct SoilTempReading {
   const char* status; // "online" | "not_connected"
 };
 
-// Deteksi pin analog mengambang (tidak terpasang sensor) via pull-down vs pull-up
+// Pin benar-benar kosong/terbuka hanya jika pull-down menarik dekat 0 DAN pull-up menarik dekat 4095.
+// Modul berimpedansi tinggi seperti DMS Depoinovasi (~33k-47k) tetap menahan salah satu sisi sehingga terbaca online.
 inline bool isAnalogPinFloating(uint8_t pin) {
   pinMode(pin, INPUT_PULLDOWN);
   delay(2);
@@ -58,8 +59,8 @@ inline bool isAnalogPinFloating(uint8_t pin) {
   delay(2);
   int highVal = analogRead(pin);
   pinMode(pin, INPUT);
-  delay(1);
-  return (highVal - lowVal) > 1500;
+  delay(2);
+  return (lowVal < 100 && highVal > 3900);
 }
 
 class ModularSoilPhDriver {
