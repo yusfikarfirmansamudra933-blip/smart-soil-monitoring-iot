@@ -84,8 +84,7 @@ CoulombEnergyMeter coulombMeter;
 AdaptivePowerManager powerManager;
 LocalConfigPortal localPortal;
 
-ModularSoilPhDriver  phSensor(PH_MODE_ANALOG_ADC, PIN_SOIL_PH_ADC, 0.0f);
-ModularSoilDmsDriver dmsSensor(DMS_MODE_DIGITAL_GPIO, PIN_DMS_CTRL, true, 3200, 1400);
+ModularSoilPhDriver  phSensor(PH_MODE_ANALOG_ADC, PIN_SOIL_PH_ADC, 0.0f, PIN_DMS_CTRL);
 CapacitiveMoistureDriver capMoistureSensor(PIN_CAP_MOISTURE, 2950, 1250);
 
 // 8MB PSRAM Signal Filters (64 sampel per kanal di OPI PSRAM)
@@ -358,7 +357,6 @@ void setup() {
 
   ds18b20.begin();
   phSensor.begin();
-  dmsSensor.begin();
   capMoistureSensor.begin();
   offlineLogger.begin();
   coulombMeter.begin(44.0f);

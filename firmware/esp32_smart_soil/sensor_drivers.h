@@ -66,15 +66,26 @@ class ModularSoilPhDriver {
 private:
   PhInterfaceMode _mode;
   uint8_t _pinOrPort;
+  int8_t _dmsCtrlPin;
   float _calOffset;
 
 public:
-  ModularSoilPhDriver(PhInterfaceMode mode, uint8_t pinOrPort, float calOffset = 0.0f)
-    : _mode(mode), _pinOrPort(pinOrPort), _calOffset(calOffset) {}
+  ModularSoilPhDriver(PhInterfaceMode mode, uint8_t pinOrPort, float calOffset = 0.0f, int8_t dmsCtrlPin = -1)
+    : _mode(mode), _pinOrPort(pinOrPort), _dmsCtrlPin(dmsCtrlPin), _calOffset(calOffset) {}
 
   void begin() {
     if (_mode == PH_MODE_ANALOG_ADC) {
       pinMode(_pinOrPort, INPUT);
+      if (_dmsCtrlPin >= 0) {
+        pinMode((uint8_t)_dmsCtrlPin, OUTPUT);
+        digitalWrite((uint8_t)_dmsCtrlPin, LOW); // Aktifkan modul DMS Depoinovasi (Active LOW)
+      }
+    }
+  }
+
+  void setDmsActive(bool active) {
+    if (_dmsCtrlPin >= 0) {
+      digitalWrite((uint8_t)_dmsCtrlPin, active ? LOW : HIGH);
     }
   }
 
@@ -84,25 +95,26 @@ public:
   SoilPhReading read() {
     SoilPhReading res = { false, NAN, 0, "not_connected" };
     if (_mode == PH_MODE_PENDING_DATASHEET) {
-      // Menunggu konfirmasi datasheet sensor pH tanah pada foto produk
       return res;
     }
     if (_mode == PH_MODE_ANALOG_ADC) {
+      if (_dmsCtrlPin >= 0) {
+        digitalWrite((uint8_t)_dmsCtrlPin, LOW);
+      }
       if (isAnalogPinFloating(_pinOrPort)) {
-        return res; // Pin mengambang / sensor belum terpasang
+        return res; // Pin mengambang / modul DMS belum terpasang
       }
       int raw = analogRead(_pinOrPort);
-      if (raw <= 5 || raw >= 4090) {
-        return res; // Open circuit / not connected
-      }
+      // Jika DMS terpasang tetapi VCC 3.3V dicabut, IC mati menarik pin secara pasif;
+      // saat DMS aktif normal (3.3V terpasang & GPIO 7 LOW), konversi regresi DMS Depoinovasi (skala 10-bit = raw/4)
       res.connected = true;
       res.rawValue = raw;
-      float voltage = (raw / 4095.0f) * 3.3f;
-      res.phValue = (voltage * 3.5f) + _calOffset;
+      float adc10 = raw / 4.0f;
+      float ph = (-0.0233f * adc10) + 12.698f + _calOffset;
+      res.phValue = constrain(ph, 0.0f, 14.0f);
       res.status = "online";
       return res;
     }
-    // Mode RS485 / UART siap diaktifkan setelah register/baudrate datasheet dikonfirmasi
     return res;
   }
 };
