@@ -40,6 +40,7 @@ private:
   int _capWet = 1250;
 
   uint8_t _bootPin = 0; // Tombol BOOT bawaan ESP32-S3 DevKitC-1
+  volatile bool _apTriggerRequested = false;
   unsigned long _bootPressStartMs = 0;
   bool _bootHeldHandled = false;
 
@@ -60,12 +61,24 @@ private:
 
   void startSoftApPortal() {
     if (_apActive) return;
+    bool staConnected = (WiFi.status() == WL_CONNECTED);
+    int channel = (staConnected && WiFi.channel() >= 1 && WiFi.channel() <= 13) ? WiFi.channel() : 6;
+    if (!staConnected) {
+      // Hentikan scan STA sementara agar radio 2.4GHz fokus memancarkan sinyal AP stabil
+      WiFi.disconnect(false);
+      delay(50);
+    }
     WiFi.mode(WIFI_AP_STA);
-    WiFi.softAP(_apSsid); // Open AP khusus konfigurasi lokal di kebun
-    _dns.start(53, "*", WiFi.softAPIP());
+    WiFi.setSleep(false);
+    IPAddress apIp(192, 168, 4, 1);
+    IPAddress netMsk(255, 255, 255, 0);
+    WiFi.softAPConfig(apIp, apIp, netMsk);
+    bool ok = WiFi.softAP(_apSsid, nullptr, channel, 0, 4);
+    _dns.start(53, "*", apIp);
     _apActive = true;
     _apStartedMs = millis();
-    Serial.printf("[LOCAL PORTAL] SoftAP Aktif! Hubungkan HP ke WiFi '%s' -> buka http://192.168.4.1\n", _apSsid);
+    Serial.printf("[LOCAL PORTAL] SoftAP '%s' (ch %d) %s! Buka http://192.168.4.1\n",
+                  _apSsid, channel, ok ? "AKTIF" : "GAGAL");
   }
 
   void stopSoftApPortal() {
@@ -214,29 +227,39 @@ public:
 
   bool isApActive() const { return _apActive; }
 
-  void updateLiveSnapshot(const PortalLiveTelemetry& snap) {
-    _live = snap;
-  }
-
-  void handle() {
-    _server.handleClient();
-    if (_apActive) {
-      _dns.processNextRequest();
-    }
-
-    // 1. Cek tombol BOOT (GPIO 0, aktif LOW) ditahan >= 3 detik
+  // Dipanggil dari Core 0 setiap 100ms agar tombol BOOT tidak pernah terlewat saat Core 1 sibuk HTTP
+  void pollBootButtonFast() {
     if (digitalRead(_bootPin) == LOW) {
       if (_bootPressStartMs == 0) {
         _bootPressStartMs = millis();
         _bootHeldHandled = false;
-      } else if (!_bootHeldHandled && (millis() - _bootPressStartMs >= 3000UL)) {
+      } else if (!_bootHeldHandled && (millis() - _bootPressStartMs >= 2000UL)) {
         _bootHeldHandled = true;
-        startSoftApPortal();
+        _apTriggerRequested = true;
       }
     } else {
       _bootPressStartMs = 0;
       _bootHeldHandled = false;
     }
+  }
+
+  void updateLiveSnapshot(const PortalLiveTelemetry& snap) {
+    _live = snap;
+  }
+
+  void handle() {
+    if (_apTriggerRequested) {
+      _apTriggerRequested = false;
+      startSoftApPortal();
+    }
+
+    _server.handleClient();
+    if (_apActive) {
+      _dns.processNextRequest();
+    }
+
+    // Fallback cek juga di Core 1
+    pollBootButtonFast();
 
     // 2. Mulai mDNS (http://smartsoil.local) saat WiFi tersambung
     if (WiFi.status() == WL_CONNECTED) {

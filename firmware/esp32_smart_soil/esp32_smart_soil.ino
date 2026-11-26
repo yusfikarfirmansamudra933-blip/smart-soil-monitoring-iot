@@ -185,6 +185,9 @@ void sensorCore0Task(void* pvParameters) {
     float dtSec = (nowMs - prevTickMs) / 1000.0f;
     prevTickMs = nowMs;
 
+    // Cek tombol BOOT setiap 100ms di Core 0 (bebas hambatan HTTP Core 1)
+    localPortal.pollBootButtonFast();
+
     SoilPhReading rawPh;
     SoilDmsReading rawCap;
     if (xSemaphoreTake(driverMutex, pdMS_TO_TICKS(50)) == pdTRUE) {
