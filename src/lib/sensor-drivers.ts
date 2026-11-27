@@ -79,7 +79,9 @@ export const DMS_INTERFACE_OPTIONS: {
 
 export function evaluatePhCategory(
   ph: number | null,
-  status: SensorConnectionState
+  status: SensorConnectionState,
+  minIdeal = 6.0,
+  maxIdeal = 7.2
 ): {
   label: string;
   badgeColor: string;
@@ -93,27 +95,27 @@ export function evaluatePhCategory(
       description: "Sensor pH tanah belum terhubung atau belum mengirim data.",
     };
   }
-  if (ph < 6.0) {
+  if (ph < minIdeal) {
     return {
-      label: "Asam (Acidic)",
+      label: "Asam",
       badgeColor:
         "bg-amber-500/15 text-amber-600 dark:text-amber-400 border-amber-500/30",
-      description: "Tanah bersifat asam (pH < 6.0). Perlu pemantauan kapur/dolomit.",
+      description: `pH di bawah target ideal (${minIdeal.toFixed(1)}).`,
     };
   }
-  if (ph <= 7.2) {
+  if (ph <= maxIdeal) {
     return {
-      label: "Netral (Optimal)",
+      label: "Ideal",
       badgeColor:
         "bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border-emerald-500/30",
-      description: "Kondisi pH tanah netral & ideal untuk penyerapan unsur hara.",
+      description: "Kondisi pH sesuai target tanaman.",
     };
   }
   return {
-    label: "Basa (Alkaline)",
+    label: "Basa",
     badgeColor:
       "bg-sky-500/15 text-sky-600 dark:text-sky-400 border-sky-500/30",
-    description: "Tanah bersifat basa (pH > 7.2).",
+    description: `pH melebihi target ideal (${maxIdeal.toFixed(1)}).`,
   };
 }
 
@@ -132,7 +134,9 @@ export function evaluateMoistureCategory(
   moisturePct: number | null,
   rawDms: number | null,
   status: SensorConnectionState,
-  calibrated: boolean
+  calibrated: boolean,
+  minIdeal = 35,
+  maxIdeal = 75
 ): {
   label: string;
   badgeColor: string;
@@ -147,47 +151,48 @@ export function evaluateMoistureCategory(
       label: "Sensor Not Connected",
       badgeColor:
         "bg-slate-200 text-slate-700 dark:bg-slate-800 dark:text-slate-300 border-slate-400",
-      description: "Sensor DMS belum terhubung atau menunggu integrasi.",
+      description: "Sensor kelembapan belum terhubung.",
     };
   }
 
   if (!calibrated || moisturePct === null) {
     return {
-      label: "Raw Data (Uncalibrated)",
+      label: "Raw Data",
       badgeColor:
         "bg-indigo-500/15 text-indigo-600 dark:text-indigo-400 border-indigo-500/30",
-      description:
-        "Menampilkan nilai mentah sensor DMS. Aktifkan kalibrasi setelah batas kering/basah ditentukan.",
+      description: "Menampilkan nilai mentah sensor.",
     };
   }
 
-  if (moisturePct < 35) {
+  if (moisturePct < minIdeal) {
     return {
-      label: "Kering (Dry)",
+      label: "Kering",
       badgeColor:
         "bg-amber-500/15 text-amber-600 dark:text-amber-400 border-amber-500/30",
-      description: "Kelembapan tanah rendah, membutuhkan penyiraman.",
+      description: "Kelembapan tanah di bawah target ideal.",
     };
   }
-  if (moisturePct <= 75) {
+  if (moisturePct <= maxIdeal) {
     return {
-      label: "Normal (Optimal)",
+      label: "Ideal",
       badgeColor:
         "bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border-emerald-500/30",
-      description: "Kelembapan tanah berada pada rentang ideal.",
+      description: "Kelembapan tanah sesuai target tanaman.",
     };
   }
   return {
-    label: "Basah (Wet)",
+    label: "Basah",
     badgeColor:
       "bg-sky-500/15 text-sky-600 dark:text-sky-400 border-sky-500/30",
-    description: "Kelembapan tanah tinggi / jenuh air.",
+    description: "Kelembapan tanah melebihi target ideal.",
   };
 }
 
 export function evaluateTemperatureCategory(
   tempC: number | null,
-  status: SensorConnectionState
+  status: SensorConnectionState,
+  minIdeal = 18,
+  maxIdeal = 33
 ): {
   label: string;
   badgeColor: string;
@@ -201,27 +206,27 @@ export function evaluateTemperatureCategory(
       description: "Sensor suhu DS18B20 Waterproof belum terhubung.",
     };
   }
-  if (tempC < 18) {
+  if (tempC < minIdeal) {
     return {
-      label: "Dingin (Cool)",
+      label: "Dingin",
       badgeColor:
         "bg-sky-500/15 text-sky-600 dark:text-sky-400 border-sky-500/30",
-      description: "Suhu tanah di bawah rentang optimal pertumbuhan akar.",
+      description: "Suhu tanah di bawah rentang target tanaman.",
     };
   }
-  if (tempC <= 33) {
+  if (tempC <= maxIdeal) {
     return {
-      label: "Normal / Optimal",
+      label: "Ideal",
       badgeColor:
         "bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border-emerald-500/30",
-      description: "Suhu tanah optimal untuk aktivitas mikroorganisme & akar.",
+      description: "Suhu tanah sesuai target tanaman.",
     };
   }
   return {
-    label: "Panas (High Temp)",
+    label: "Panas",
     badgeColor:
       "bg-rose-500/15 text-rose-600 dark:text-rose-400 border-rose-500/30",
-    description: "Suhu tanah tinggi, potensi evaporasi berlebih.",
+    description: "Suhu tanah di atas rentang target tanaman.",
   };
 }
 

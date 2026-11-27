@@ -80,6 +80,7 @@ export interface SoilDeviceStatus {
 
 export interface SoilDeviceConfig {
   device_id: string;
+  active_crop?: string;
   read_interval_sec: number;
   send_interval_sec: number;
   timezone: string;
@@ -132,6 +133,7 @@ export type TimeRangeOption = "1h" | "6h" | "24h" | "7d" | "30d";
 
 export type NavSection =
   | "dashboard"
+  | "ai"
   | "soil"
   | "energy"
   | "history"

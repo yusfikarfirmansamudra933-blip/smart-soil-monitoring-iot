@@ -66,8 +66,9 @@ export async function POST(req: NextRequest) {
     const clamp = (val: number, min: number, max: number) =>
       Math.max(min, Math.min(max, val));
 
-    const configPayload = {
+    const configPayload: Record<string, unknown> = {
       device_id: deviceId,
+      ...(body.active_crop ? { active_crop: String(body.active_crop).slice(0, 60) } : {}),
       read_interval_sec: clamp(Number(body.read_interval_sec ?? 2) || 2, 1, 86400),
       send_interval_sec: clamp(Number(body.send_interval_sec ?? 2) || 2, 1, 86400),
       timezone: String(body.timezone || "Asia/Jakarta"),

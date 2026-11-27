@@ -113,14 +113,26 @@ export function SoilMonitoringCards({
   const tempValue =
     tempStatus === "not_connected" ? null : latest?.soil_temperature ?? null;
 
-  const phEval = evaluatePhCategory(phValue, phStatus);
+  const phEval = evaluatePhCategory(
+    phValue,
+    phStatus,
+    config.ph_min_alarm,
+    config.ph_max_alarm
+  );
   const moistureEval = evaluateMoistureCategory(
     moisturePct,
     dmsRaw,
     dmsStatus,
-    config.dms_calibrated
+    config.dms_calibrated,
+    config.moisture_min_alarm,
+    config.moisture_max_alarm
   );
-  const tempEval = evaluateTemperatureCategory(tempValue, tempStatus);
+  const tempEval = evaluateTemperatureCategory(
+    tempValue,
+    tempStatus,
+    config.temp_min_alarm,
+    config.temp_max_alarm
+  );
 
   const chartData = history.slice(-18).map((item) => ({
     time: new Date(item.ts).toLocaleTimeString("id-ID", {
@@ -184,9 +196,12 @@ export function SoilMonitoringCards({
             {/* pH Scale Bar */}
             <div className="space-y-1.5">
               <div className="flex justify-between text-[11px] font-medium text-slate-500 dark:text-slate-400">
-                <span>Asam (&lt; 6.0)</span>
-                <span>Netral (6.0 - 7.2)</span>
-                <span>Basa (&gt; 7.2)</span>
+                <span>Asam (&lt; {config.ph_min_alarm.toFixed(1)})</span>
+                <span>
+                  Ideal ({config.ph_min_alarm.toFixed(1)} -{" "}
+                  {config.ph_max_alarm.toFixed(1)})
+                </span>
+                <span>Basa (&gt; {config.ph_max_alarm.toFixed(1)})</span>
               </div>
               <div className="h-2.5 w-full rounded-full bg-gradient-to-r from-amber-500 via-emerald-500 to-sky-500 relative overflow-hidden">
                 {phValue !== null && (
@@ -442,9 +457,11 @@ export function SoilMonitoringCards({
             {/* Temperature Range Bar */}
             <div className="space-y-1.5">
               <div className="flex justify-between text-[11px] font-medium text-slate-500 dark:text-slate-400">
-                <span>Dingin (&lt; 18°C)</span>
-                <span>Optimal (18 - 33°C)</span>
-                <span>Panas (&gt; 33°C)</span>
+                <span>Dingin (&lt; {config.temp_min_alarm}°C)</span>
+                <span>
+                  Ideal ({config.temp_min_alarm} - {config.temp_max_alarm}°C)
+                </span>
+                <span>Panas (&gt; {config.temp_max_alarm}°C)</span>
               </div>
               <div className="h-2.5 w-full rounded-full bg-gradient-to-r from-sky-500 via-emerald-500 to-rose-500 relative overflow-hidden">
                 {tempValue !== null && (

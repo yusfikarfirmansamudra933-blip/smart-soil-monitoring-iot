@@ -17,6 +17,7 @@ import {
   Radio,
   RefreshCw,
   Settings,
+  Sparkles,
   Sprout,
   Sun,
   Thermometer,
@@ -40,6 +41,7 @@ import {
 } from "@/lib/sensor-drivers";
 import { DEFAULT_DEVICE_ID, supabase } from "@/lib/supabase";
 import { SoilMonitoringCards } from "@/components/SoilMonitoringCards";
+import { AiCropAdvisorView } from "@/components/AiCropAdvisorView";
 import { EnergyMonitoringView } from "@/components/EnergyMonitoringView";
 import { HistoryAndChartsView } from "@/components/HistoryAndChartsView";
 import { AlertsView } from "@/components/AlertsView";
@@ -57,6 +59,7 @@ const NAV_ITEMS: {
   icon: React.ComponentType<{ className?: string }>;
 }[] = [
   { id: "dashboard", label: "Dashboard", icon: LayoutDashboard },
+  { id: "ai", label: "Asisten AI", icon: Sparkles },
   { id: "soil", label: "Soil Monitoring", icon: Sprout },
   { id: "energy", label: "Energy Monitoring", icon: Zap },
   { id: "history", label: "Data History", icon: History },
@@ -436,6 +439,14 @@ export default function SmartSoilMonitoringApp() {
                   <span className="px-2 py-0.5 rounded-full text-[10px] font-semibold bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border border-emerald-500/30">
                     LIVE HARDWARE
                   </span>
+                  <button
+                    type="button"
+                    onClick={() => setActiveNav("ai")}
+                    className="px-2 py-0.5 rounded-full text-[10px] font-semibold bg-sky-500/15 text-sky-600 dark:text-sky-400 border border-sky-500/30 hover:bg-sky-500/25 transition"
+                    title="Klik untuk ubah tanaman via Asisten AI"
+                  >
+                    Tanaman: {config.active_crop || "Umum"}
+                  </button>
                 </div>
                 <p className="text-xs text-slate-500 dark:text-slate-400 hidden sm:block">
                   {activeDeviceStatus.name} • {activeDeviceStatus.location}
@@ -852,6 +863,16 @@ export default function SmartSoilMonitoringApp() {
             </>
           )}
 
+          {/* Menu AI: Asisten AI Tanaman */}
+          {activeNav === "ai" && (
+            <AiCropAdvisorView
+              config={config}
+              latest={activeLatest}
+              deviceStatus={activeDeviceStatus}
+              onConfigUpdated={(newCfg) => setConfig(newCfg)}
+            />
+          )}
+
           {/* Menu 2: Soil Monitoring */}
           {activeNav === "soil" && (
             <SoilMonitoringCards
@@ -930,7 +951,7 @@ export default function SmartSoilMonitoringApp() {
             NAV_ITEMS[1],
             NAV_ITEMS[2],
             NAV_ITEMS[3],
-            NAV_ITEMS[5],
+            NAV_ITEMS[6],
           ].map((item) => {
             const Icon = item.icon;
             const active = activeNav === item.id;
