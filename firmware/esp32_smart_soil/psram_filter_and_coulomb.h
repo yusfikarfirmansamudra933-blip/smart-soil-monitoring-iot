@@ -247,14 +247,42 @@ public:
 class AdaptivePowerManager {
 private:
   bool _powerSave = false;
+  bool _wasForced = false;
 
 public:
   bool isPowerSaveActive() const { return _powerSave; }
 
   unsigned long evaluateAndApply(bool battOk, float battV, float lowThresholdV,
-                                 unsigned long normalIntervalMs, bool apPortalActive) {
+                                 unsigned long normalIntervalMs, bool apPortalActive,
+                                 bool forcePowerSave = false) {
     // Untuk baterai 3S Li-ion (9.6V-12.6V), jaga batas hemat daya realistis (~10.8V)
     float effectiveLowV = (lowThresholdV >= 9.8f && lowThresholdV <= 11.4f) ? lowThresholdV : 10.8f;
+
+    if (forcePowerSave) {
+      if (!_powerSave || !_wasForced) {
+        _powerSave = true;
+        _wasForced = true;
+        setCpuFrequencyMhz(80);
+        if (!apPortalActive) WiFi.setSleep(true);
+        Serial.println("[POWER SAVE] Mode Paksa Hemat Daya Web ON -> CPU 80MHz & WiFi Modem-Sleep");
+      }
+      if (battOk && !isnan(battV) && battV <= effectiveLowV) {
+        return (battV < 10.1f)
+          ? (normalIntervalMs > 600000UL ? normalIntervalMs : 600000UL)
+          : (normalIntervalMs > 300000UL ? normalIntervalMs : 300000UL);
+      }
+      return normalIntervalMs > 10000UL ? normalIntervalMs : 10000UL;
+    }
+
+    if (_wasForced) {
+      _wasForced = false;
+      if (!battOk || isnan(battV) || battV > effectiveLowV) {
+        _powerSave = false;
+        setCpuFrequencyMhz(240);
+        if (!apPortalActive) WiFi.setSleep(false);
+        Serial.println("[POWER SAVE] Mode Paksa Hemat Daya Web OFF -> CPU 240MHz Normal Mode");
+      }
+    }
 
     if (!battOk || isnan(battV)) {
       if (_powerSave) {

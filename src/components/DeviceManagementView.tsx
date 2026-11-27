@@ -8,13 +8,17 @@ import {
   Clock,
   Cpu,
   Key,
+  Power,
   Radio,
+  RotateCcw,
   Save,
   Send,
   Server,
   Settings2,
   Sliders,
   Unplug,
+  Volume2,
+  Zap,
 } from "lucide-react";
 import {
   DmsInterfaceMode,
@@ -61,10 +65,45 @@ export function DeviceManagementView({
   const [cfg, setCfg] = useState<SoilDeviceConfig>({ ...config });
   const [saving, setSaving] = useState(false);
   const [saveMessage, setSaveMessage] = useState<string | null>(null);
+  const [sendingRemoteCmd, setSendingRemoteCmd] = useState<string | null>(null);
+  const [remoteCmdStatus, setRemoteCmdStatus] = useState<string | null>(null);
 
   useEffect(() => {
     setCfg({ ...config });
   }, [config]);
+
+  const handleRemoteCommand = async (
+    command: "ring_buzzer" | "reset_energy" | "reboot_mcu" | "toggle_power_save"
+  ) => {
+    setSendingRemoteCmd(command);
+    setRemoteCmdStatus(null);
+    try {
+      const res = await fetch("/api/v1/device/command", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          device_id: deviceStatus.device_id || "SOIL-001",
+          command,
+        }),
+      });
+      const json = await res.json();
+      if (res.ok) {
+        setRemoteCmdStatus(json.message || "Perintah jarak jauh berhasil dikirim.");
+        if (typeof json.force_power_save === "boolean") {
+          setCfg((prev) => ({ ...prev, force_power_save: json.force_power_save }));
+        }
+        onTriggerRefresh();
+      } else {
+        setRemoteCmdStatus(`Gagal: ${json.error || "Gagal mengirim perintah"}`);
+      }
+    } catch (err: unknown) {
+      setRemoteCmdStatus(
+        `Error: ${err instanceof Error ? err.message : "Kesalahan jaringan"}`
+      );
+    } finally {
+      setSendingRemoteCmd(null);
+    }
+  };
 
   // Interactive HTTP POST /api/v1/telemetry tester
   const [testPayload, setTestPayload] = useState({
@@ -296,6 +335,116 @@ export function DeviceManagementView({
             <Clock className="w-5 h-5 text-emerald-500" />
           </div>
         </div>
+      </div>
+
+      {/* 2-Way Remote Control Panel (Web -> ESP32-S3) */}
+      <div className="rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-6 space-y-4">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+          <div className="flex items-center gap-2.5">
+            <Radio className="w-5 h-5 text-emerald-500" />
+            <div>
+              <h3 className="font-bold text-base text-slate-900 dark:text-white">
+                Kontrol Jarak Jauh 2-Arah (Web → ESP32-S3)
+              </h3>
+              <p className="text-xs text-slate-500">
+                Perintah dieksekusi otomatis oleh ESP32-S3 pada siklus telemetri berikutnya (~2 detik) tanpa perlu kabel USB
+              </p>
+            </div>
+          </div>
+          {cfg.pending_command && (
+            <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-amber-500/15 text-amber-600 dark:text-amber-400 border border-amber-500/30">
+              Menunggu Eksekusi: {cfg.pending_command}
+            </span>
+          )}
+        </div>
+
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 text-xs">
+          <button
+            type="button"
+            disabled={sendingRemoteCmd !== null}
+            onClick={() => handleRemoteCommand("ring_buzzer")}
+            className="p-3.5 rounded-xl bg-emerald-500/10 hover:bg-emerald-500/20 border border-emerald-500/30 text-left transition flex items-start gap-3 disabled:opacity-50"
+          >
+            <Volume2 className="w-5 h-5 text-emerald-600 dark:text-emerald-400 shrink-0 mt-0.5" />
+            <div>
+              <span className="font-bold text-slate-900 dark:text-white block">
+                {sendingRemoteCmd === "ring_buzzer"
+                  ? "Mengirim..."
+                  : "Tes Bunyikan Buzzer"}
+              </span>
+              <span className="text-[11px] text-slate-500">
+                Bunyikan Active Buzzer 3× untuk cek posisi alat di kebun
+              </span>
+            </div>
+          </button>
+
+          <button
+            type="button"
+            disabled={sendingRemoteCmd !== null}
+            onClick={() => handleRemoteCommand("reset_energy")}
+            className="p-3.5 rounded-xl bg-sky-500/10 hover:bg-sky-500/20 border border-sky-500/30 text-left transition flex items-start gap-3 disabled:opacity-50"
+          >
+            <RotateCcw className="w-5 h-5 text-sky-600 dark:text-sky-400 shrink-0 mt-0.5" />
+            <div>
+              <span className="font-bold text-slate-900 dark:text-white block">
+                {sendingRemoteCmd === "reset_energy"
+                  ? "Mengirim..."
+                  : "Reset Meteran Energi (Wh)"}
+              </span>
+              <span className="text-[11px] text-slate-500">
+                Nolkan akumulasi Wh Panel Surya & Baterai di NVS
+              </span>
+            </div>
+          </button>
+
+          <button
+            type="button"
+            disabled={sendingRemoteCmd !== null}
+            onClick={() => handleRemoteCommand("toggle_power_save")}
+            className={`p-3.5 rounded-xl border text-left transition flex items-start gap-3 disabled:opacity-50 ${
+              cfg.force_power_save
+                ? "bg-amber-500/20 border-amber-500/50 hover:bg-amber-500/25"
+                : "bg-amber-500/10 border-amber-500/30 hover:bg-amber-500/20"
+            }`}
+          >
+            <Zap className="w-5 h-5 text-amber-600 dark:text-amber-400 shrink-0 mt-0.5" />
+            <div>
+              <span className="font-bold text-slate-900 dark:text-white block">
+                {sendingRemoteCmd === "toggle_power_save"
+                  ? "Mengubah..."
+                  : `Hemat Daya 80 MHz: ${cfg.force_power_save ? "AKTIF" : "OFF"}`}
+              </span>
+              <span className="text-[11px] text-slate-500">
+                Paksa CPU 80 MHz & WiFi Modem-Sleep saat cuaca mendung
+              </span>
+            </div>
+          </button>
+
+          <button
+            type="button"
+            disabled={sendingRemoteCmd !== null}
+            onClick={() => handleRemoteCommand("reboot_mcu")}
+            className="p-3.5 rounded-xl bg-rose-500/10 hover:bg-rose-500/20 border border-rose-500/30 text-left transition flex items-start gap-3 disabled:opacity-50"
+          >
+            <Power className="w-5 h-5 text-rose-600 dark:text-rose-400 shrink-0 mt-0.5" />
+            <div>
+              <span className="font-bold text-slate-900 dark:text-white block">
+                {sendingRemoteCmd === "reboot_mcu"
+                  ? "Merestart..."
+                  : "Restart ESP32-S3"}
+              </span>
+              <span className="text-[11px] text-slate-500">
+                Muat ulang mikrokontroler jarak jauh tanpa ke lahan
+              </span>
+            </div>
+          </button>
+        </div>
+
+        {remoteCmdStatus && (
+          <div className="px-3.5 py-2.5 rounded-xl bg-emerald-500/10 border border-emerald-500/30 text-xs font-medium text-emerald-700 dark:text-emerald-300">
+            {remoteCmdStatus}
+          </div>
+        )}
       </div>
 
       {/* Configuration Form & Live Telemetry Tester */}

@@ -100,6 +100,8 @@ export interface SoilDeviceConfig {
   modem_quota_min_mb?: number;
   modem_credit_min_rp?: number;
   buzzer_enabled?: boolean;
+  pending_command?: string | null;
+  force_power_save?: boolean;
   updated_at?: string;
 }
 

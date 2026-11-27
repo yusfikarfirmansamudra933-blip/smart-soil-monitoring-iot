@@ -352,6 +352,15 @@ export async function POST(req: NextRequest) {
       await supabase.from("soil_alerts").insert(alertsToInsert);
     }
 
+    // Ambil & bersihkan antrean perintah 1-kali (one-shot remote command) agar dieksekusi tepat 1x oleh ESP32-S3
+    const pendingCommand: string | null = config.pending_command || null;
+    if (pendingCommand) {
+      await supabase
+        .from("soil_device_configs")
+        .update({ pending_command: null })
+        .eq("device_id", deviceId);
+    }
+
     return NextResponse.json(
       {
         status: "ok",
@@ -359,6 +368,8 @@ export async function POST(req: NextRequest) {
         data: inserted,
         triggered_alerts: alertsToInsert.length,
         buzzer_command: effectiveBuzzerActive,
+        remote_command: pendingCommand,
+        force_power_save: Boolean(config.force_power_save),
       },
       { status: 201 }
     );

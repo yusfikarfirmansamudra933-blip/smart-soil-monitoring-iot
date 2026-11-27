@@ -302,6 +302,18 @@ float extractJsonNumber(const String& json, const char* key, float fallback) {
   return json.substring(idx, idx + 16).toFloat();
 }
 
+bool remoteForcePowerSave = false;
+
+void ringBuzzerForced() {
+  Serial.println("[REMOTE CMD] Membunyikan Active Buzzer 3x dari Dashboard Web...");
+  for (int i = 0; i < 3; i++) {
+    digitalWrite(PIN_ACTIVE_BUZZER, HIGH);
+    delay(200);
+    digitalWrite(PIN_ACTIVE_BUZZER, LOW);
+    delay(120);
+  }
+}
+
 void syncRemoteDeviceConfig() {
   if (WiFi.status() != WL_CONNECTED) return;
   HTTPClient http;
@@ -322,9 +334,13 @@ void syncRemoteDeviceConfig() {
     if (bLow >= 9.0f && bLow <= 13.0f) batteryLowAlarmV = bLow;
     if (body.indexOf("\"buzzer_enabled\":false") >= 0) buzzerEnabled = false;
     else if (body.indexOf("\"buzzer_enabled\":true") >= 0) buzzerEnabled = true;
+    if (body.indexOf("\"force_power_save\":true") >= 0) remoteForcePowerSave = true;
+    else if (body.indexOf("\"force_power_save\":false") >= 0) remoteForcePowerSave = false;
 
-    Serial.printf("[CONFIG SYNC] KuotaMin: %.0f MB | PulsaMin: Rp %.0f | BattLow: %.2fV | Buzzer: %s\n",
-                  modemQuotaMinMb, modemCreditMinRp, batteryLowAlarmV, buzzerEnabled ? "ON" : "OFF");
+    Serial.printf("[CONFIG SYNC] KuotaMin: %.0f MB | PulsaMin: Rp %.0f | BattLow: %.2fV | Buzzer: %s | ForceEco: %s\n",
+                  modemQuotaMinMb, modemCreditMinRp, batteryLowAlarmV,
+                  buzzerEnabled ? "ON" : "OFF",
+                  remoteForcePowerSave ? "ON" : "OFF");
   }
   http.end();
 }
@@ -470,9 +486,9 @@ void loop() {
     syncRemoteDeviceConfig();
   }
 
-  // Evaluasi Adaptive Power Mode berdasarkan tegangan baterai 3S Li-ion
+  // Evaluasi Adaptive Power Mode berdasarkan tegangan baterai 3S Li-ion atau perintah paksa Web
   unsigned long effectiveSendIntervalMs = powerManager.evaluateAndApply(
-    inaBatteryOk, snap.battV, batteryLowAlarmV, sendIntervalMs, localPortal.isApActive()
+    inaBatteryOk, snap.battV, batteryLowAlarmV, sendIntervalMs, localPortal.isApActive(), remoteForcePowerSave
   );
 
   if ((!firstTelemetrySent && WiFi.status() == WL_CONNECTED && millis() > 3500) ||
@@ -545,7 +561,23 @@ void loop() {
       Serial.printf("[HTTP POST] Status code: %d\n", code);
 
       if (code >= 200 && code < 300) {
-        if (resp.indexOf("\"buzzer_command\":true") >= 0 && !buzzerActive) {
+        if (resp.indexOf("\"force_power_save\":true") >= 0) {
+          remoteForcePowerSave = true;
+        } else if (resp.indexOf("\"force_power_save\":false") >= 0) {
+          remoteForcePowerSave = false;
+        }
+
+        if (resp.indexOf("\"remote_command\":\"ring_buzzer\"") >= 0) {
+          ringBuzzerForced();
+        } else if (resp.indexOf("\"remote_command\":\"reset_energy\"") >= 0) {
+          Serial.println("[REMOTE CMD] Mereset akumulasi Wh Coulomb Meter...");
+          coulombMeter.resetCounters();
+        } else if (resp.indexOf("\"remote_command\":\"reboot_mcu\"") >= 0) {
+          Serial.println("[REMOTE CMD] Restart ESP32-S3 dari Dashboard Web...");
+          http.end();
+          delay(250);
+          ESP.restart();
+        } else if (resp.indexOf("\"buzzer_command\":true") >= 0 && !buzzerActive) {
           updateActiveBuzzer(true);
         }
       } else {

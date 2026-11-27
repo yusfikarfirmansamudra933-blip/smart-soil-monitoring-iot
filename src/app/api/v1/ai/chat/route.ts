@@ -1,7 +1,10 @@
 import { NextRequest, NextResponse } from "next/server";
 import { DEFAULT_DEVICE_ID, supabase } from "@/lib/supabase";
 import { DEFAULT_CONFIG } from "@/lib/default-config";
-import { runLocalAgronomyExpert } from "@/lib/agronomy-expert";
+import {
+  LeafColorMetrics,
+  runLocalAgronomyExpert,
+} from "@/lib/agronomy-expert";
 import { SoilTelemetryRecord } from "@/lib/types";
 
 interface AiStructuredDecision {
@@ -58,18 +61,14 @@ async function callKeylessCloudAgronomist(
   history: Array<{ role: string; content: string }>,
   sensorContext: string,
   currentConfigContext: string,
-  expertReferenceHint: string
+  expertReferenceHint: string,
+  imageBase64?: string | null
 ): Promise<AiStructuredDecision | null> {
-  const systemPrompt = `Anda adalah Asisten AI Agronomi Cerdas (Pakar Pertanian Indonesia) pada sistem Smart Soil Monitoring IoT berbasis ESP32-S3.
-Anda BISA menjawab SEMUA pertanyaan pertanian secara mendalam dan praktis:
-- Auto-kalibrasi target tanaman apa saja di dunia (sayur, buah, pangan, perkebunan, rimpang, tanaman hias)
-- Rekomendasi jadwal & dosis pupuk (NPK, Urea, MKP, KNO3, Kalsium-Boron, Dolomit, Pupuk Kandang, POC)
-- Cara mengatasi hama (thrips, tungau, kutu kebul, ulat, lalat buah, wereng, dll.) secara organik/nabati maupun bahan aktif kimia
-- Diagnosis penyakit (patek/antraknosa, layu fusarium vs bakteri, busuk akar, daun keriting/kuning, bunga rontok)
-- Cara olah tanah, penyiraman, dan evaluasi angka sensor real-time
+  const systemPrompt = `Anda adalah Asisten AI Agronomi & Dokter Daun Tanaman pada sistem Smart Soil Monitoring IoT berbasis ESP32-S3.
+Anda BISA menjawab semua konsultasi pertanian (tanaman apa saja, pupuk, hama, penyakit, olah tanah) SERTA menganalisis foto daun tanaman yang diunggah petani dengan menggabungkan kondisi sensor tanah real-time!
 
 ATURAN WAJIB OUTPUT:
-Balas HANYA dalam format JSON valid persis dengan struktur ini (tanpa teks di luar JSON):
+Balas HANYA dalam format JSON valid persis struktur ini:
 {
   "should_update_crop": boolean,
   "crop_name": "Nama Tanaman Singkat",
@@ -79,33 +78,40 @@ Balas HANYA dalam format JSON valid persis dengan struktur ini (tanpa teks di lu
   "moisture_max": number,
   "temp_min": number,
   "temp_max": number,
-  "reply": "Jawaban lengkap berbahasa Indonesia yang rapi (boleh gunakan **tebal** dan daftar poin - )"
+  "reply": "Jawaban lengkap berbahasa Indonesia yang ramah & rapi (gunakan **tebal** dan daftar poin - )"
 }
 
 Ketentuan:
-1. Set "should_update_crop": true HANYA jika petani menyebutkan sedang/ingin menanam tanaman baru atau meminta menyetel target tanaman tertentu. Jika petani hanya bertanya pupuk/hama/penyakit/tips untuk tanaman yang sedang aktif, set "should_update_crop": false dan pertahankan angka konfigurasi saat ini.
-2. Jangan pernah mengarang angka sensor! Jika sensor tertulis "Sensor Not Connected" atau "Offline", sampaikan jujur.
+1. Set "should_update_crop": true HANYA jika petani menyebutkan ingin menanam/mengganti target tanaman tertentu. Jika sedang konsultasi foto daun / pupuk / hama tanaman aktif, set "should_update_crop": false.
+2. Jangan pernah mengarang angka sensor jika tertulis "Sensor Not Connected" atau "Offline".
 
-Konteks Konfigurasi Aktif Saat Ini:
+Konteks Konfigurasi Saat Ini:
 ${currentConfigContext}
 
 Konteks Sensor Live ESP32-S3 Saat Ini:
 ${sensorContext}
 
-Referensi Pakar Agronomi:
+Referensi Pakar & Analisis Piksel Daun:
 ${expertReferenceHint}`;
+
+  const userContent = imageBase64
+    ? [
+        { type: "text", text: userMessage },
+        { type: "image_url", image_url: { url: imageBase64 } },
+      ]
+    : userMessage;
 
   const messages = [
     { role: "system", content: systemPrompt },
-    ...history.slice(-6).map((m) => ({
+    ...history.slice(-4).map((m) => ({
       role: m.role === "assistant" ? "assistant" : "user",
-      content: String(m.content || "").slice(0, 900),
+      content: String(m.content || "").slice(0, 700),
     })),
-    { role: "user", content: userMessage },
+    { role: "user", content: userContent },
   ];
 
   const controller = new AbortController();
-  const timeout = setTimeout(() => controller.abort(), 8500);
+  const timeout = setTimeout(() => controller.abort(), 11000);
 
   try {
     const res = await fetch("https://text.pollinations.ai/openai", {
@@ -135,18 +141,30 @@ ${expertReferenceHint}`;
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json();
-    const message = String(body.message || "").trim();
+    const rawMessage = String(body.message || "").trim();
+    const imageBase64 =
+      typeof body.image_base64 === "string" &&
+      body.image_base64.startsWith("data:image/")
+        ? body.image_base64
+        : null;
+    const leafMetrics = (body.leaf_metrics || null) as LeafColorMetrics | null;
+
+    const message =
+      rawMessage ||
+      (imageBase64
+        ? "Tolong periksa kondisi kesehatan daun tanaman pada foto ini beserta cara mengatasinya."
+        : "");
+
     const deviceId = String(body.device_id || DEFAULT_DEVICE_ID).trim();
     const history = Array.isArray(body.history) ? body.history : [];
 
     if (!message) {
       return NextResponse.json(
-        { error: "Pesan tidak boleh kosong." },
+        { error: "Pesan atau foto daun tidak boleh kosong." },
         { status: 400 }
       );
     }
 
-    // 1. Ambil konfigurasi & data sensor live terbaru dari Supabase
     const [{ data: cfgRow }, { data: devRow }, { data: latestRow }] =
       await Promise.all([
         supabase
@@ -206,27 +224,37 @@ export async function POST(req: NextRequest) {
       currentCfg.moisture_max_alarm
     }% | Suhu Ideal: ${currentCfg.temp_min_alarm}°C-${currentCfg.temp_max_alarm}°C`;
 
-    // 2. Jalankan Mesin Pakar Agronomi Lokal sebagai referensi presisi sekaligus jaring pengaman instan
     const localExpert = runLocalAgronomyExpert(
       message,
       currentCfg,
       latest,
-      isDeviceOnline
+      isDeviceOnline,
+      leafMetrics
     );
 
-    const expertHint = `Rekomendasi target=${localExpert.cropName} (pH ${localExpert.phMin}-${localExpert.phMax}, Moisture ${localExpert.moistureMin}-${localExpert.moistureMax}%, Suhu ${localExpert.tempMin}-${localExpert.tempMax}°C).`;
+    const leafHint = leafMetrics
+      ? ` | Rasio Warna Foto Daun: Hijau=${leafMetrics.greenPct.toFixed(
+          0
+        )}%, Kuning=${leafMetrics.yellowPct.toFixed(
+          0
+        )}%, Cokelat/Bercak=${leafMetrics.brownPct.toFixed(
+          0
+        )}%, Putih=${leafMetrics.whitePct.toFixed(0)}%`
+      : "";
 
-    // 3. Panggil Keyless Cloud LLM (Tanpa API Key!) untuk kecerdasan percakapan penuh semua tanaman & topik
+    const expertHint = `Rekomendasi target=${localExpert.cropName} (pH ${localExpert.phMin}-${localExpert.phMax}, Moisture ${localExpert.moistureMin}-${localExpert.moistureMax}%, Suhu ${localExpert.tempMin}-${localExpert.tempMax}°C)${leafHint}.`;
+
     let decision = await callKeylessCloudAgronomist(
       message,
       history,
       sensorContext,
       currentConfigContext,
-      expertHint
+      expertHint,
+      imageBase64
     );
 
-    let engine: "keyless-cloud-llm" | "agronomy-expert-engine" =
-      "keyless-cloud-llm";
+    let engine: "keyless-vision-llm" | "agronomy-expert-engine" =
+      "keyless-vision-llm";
 
     if (!decision) {
       engine = "agronomy-expert-engine";
@@ -243,7 +271,6 @@ export async function POST(req: NextRequest) {
       };
     }
 
-    // 4. Jika AI mendeteksi pergantian/kalibrasi tanaman, simpan otomatis ke Supabase soil_device_configs
     let appliedConfig = null;
     if (decision.should_update_crop) {
       const phMin = Number(clamp(decision.ph_min, 3.5, 8.5).toFixed(1));
