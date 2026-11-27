@@ -6,6 +6,7 @@ const ALLOWED_ONE_SHOT_COMMANDS = new Set([
   "ring_buzzer",
   "reset_energy",
   "reboot_mcu",
+  "ota_update",
 ]);
 
 export async function POST(req: NextRequest) {
@@ -13,6 +14,8 @@ export async function POST(req: NextRequest) {
     const body = await req.json();
     const deviceId = String(body.device_id || DEFAULT_DEVICE_ID).trim();
     const command = String(body.command || "").trim();
+    const customOtaUrl =
+      typeof body.ota_url === "string" ? body.ota_url.trim() : "";
 
     const { data: existing } = await supabase
       .from("soil_device_configs")
@@ -47,6 +50,7 @@ export async function POST(req: NextRequest) {
         message: nextForce
           ? "Mode Paksa Hemat Daya (80 MHz) diaktifkan — ESP32-S3 menyesuaikan pada siklus berikutnya (~2 detik)."
           : "Mode Paksa Hemat Daya dimatikan — ESP32-S3 kembali ke mode otomatis (240 MHz).",
+        force_power_save: nextForce,
         config: updated,
       });
     }
@@ -58,11 +62,20 @@ export async function POST(req: NextRequest) {
       );
     }
 
+    let pendingValue = command;
+    if (
+      command === "ota_update" &&
+      customOtaUrl.length > 10 &&
+      (customOtaUrl.startsWith("https://") || customOtaUrl.startsWith("http://"))
+    ) {
+      pendingValue = `ota_update:${customOtaUrl}`;
+    }
+
     const { data: updated, error } = await supabase
       .from("soil_device_configs")
       .upsert({
         ...baseCfg,
-        pending_command: command,
+        pending_command: pendingValue,
         updated_at: new Date().toISOString(),
       })
       .select()
@@ -79,6 +92,8 @@ export async function POST(req: NextRequest) {
         "Perintah Reset Meteran Energi (Wh) dikirim! Akumulasi Wh Surya & Baterai di ESP32-S3 segera di-nolkan.",
       reboot_mcu:
         "Perintah Restart Jarak Jauh dikirim! ESP32-S3 akan reboot otomatis dalam ~2 detik.",
+      ota_update:
+        "Perintah Wireless OTA Update dikirim! ESP32-S3 sedang mengunduh firmware terbaru lewat WiFi/4G, menulis ke partisi OTA, lalu reboot otomatis (~20–45 detik).",
     };
 
     return NextResponse.json({

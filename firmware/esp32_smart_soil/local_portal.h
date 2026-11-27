@@ -7,6 +7,10 @@
 #include <DNSServer.h>
 #include <ESPmDNS.h>
 #include <Preferences.h>
+#include <Update.h>
+#include <WiFiClientSecure.h>
+#include <ArduinoOTA.h>
+#include <esp_task_wdt.h>
 
 struct PortalLiveTelemetry {
   float soilPh = NAN;
@@ -94,7 +98,7 @@ private:
     _server.on("/", HTTP_GET, [this]() {
       String html = "<!DOCTYPE html><html lang='id'><head><meta charset='utf-8'>"
         "<meta name='viewport' content='width=device-width,initial-scale=1'>"
-        "<title>Smart Soil ESP32-S3 Portal</title>"
+        "<title>Smart Soil ESP32-S3 Portal & OTA</title>"
         "<style>"
         "body{font-family:system-ui,sans-serif;background:#0f172a;color:#f8fafc;margin:0;padding:16px}"
         ".wrap{max-width:520px;margin:0 auto;display:flex;flex-direction:column;gap:14px}"
@@ -106,9 +110,10 @@ private:
         "label{font-size:12px;color:#cbd5e1;display:block;margin:8px 0 4px}"
         "input{width:100%;box-sizing:border-box;padding:9px 10px;border-radius:8px;border:1px solid #475569;background:#0f172a;color:#fff}"
         "button{margin-top:12px;width:100%;padding:10px;border:0;border-radius:10px;background:#10b981;color:#fff;font-weight:700;cursor:pointer}"
+        ".btn-ota{background:#6366f1}"
         ".sub{font-size:11px;color:#64748b}"
         "</style></head><body><div class='wrap'>"
-        "<div class='card'><h1>Smart Soil ESP32-S3 N16R8</h1>"
+        "<div class='card'><h1>Smart Soil ESP32-S3 N16R8 (Wireless OTA)</h1>"
         "<div class='sub'>WiFi: <b>" + (WiFi.status() == WL_CONNECTED ? WiFi.SSID() + " (" + String(WiFi.RSSI()) + " dBm)" : String("Terputus")) + "</b>"
         " • PSRAM Free: <b>" + String(ESP.getFreePsram() / 1024) + " KB</b>"
         " • Mode: <b>" + String(_live.powerSave ? "Power Save 80MHz" : "Normal 240MHz") + "</b></div></div>"
@@ -122,6 +127,11 @@ private:
         "<div class='box'><span class='lbl'>Panen Surya</span><span class='val' id='swh'>" + fmtFloatOrNa(_live.solarWh, 2, "Wh") + "</span></div>"
         "<div class='box'><span class='lbl'>Antrean Offline</span><span class='val' id='q'>" + String(_live.pendingOffline) + " data</span></div>"
         "</div></div>"
+        "<div class='card'><h2>Wireless OTA Firmware Update (Tanpa Kabel USB)</h2>"
+        "<p class='sub' style='margin:0 0 8px'>Pilih file <b>firmware.bin</b> dari HP/Laptop untuk meng-upgrade ESP32-S3 lewat WiFi.</p>"
+        "<form method='POST' action='/update' enctype='multipart/form-data'>"
+        "<input type='file' name='firmware' accept='.bin' required>"
+        "<button type='submit' class='btn-ota'>Upload &amp; Flash Firmware OTA</button></form></div>"
         "<div class='card'><h2>Ganti WiFi / Hotspot Modem 4G (Tanpa Laptop)</h2>"
         "<form method='POST' action='/save-wifi'>"
         "<label>Nama WiFi (SSID 2.4 GHz)</label><input name='ssid' value='" + _ssid + "' required>"
@@ -146,6 +156,49 @@ private:
         "}).catch(()=>{}),3000);</script></body></html>";
       _server.send(200, "text/html", html);
     });
+
+    // Endpoint Multipart Browser OTA Update (/update)
+    _server.on(
+      "/update",
+      HTTP_POST,
+      [this]() {
+        bool ok = !Update.hasError();
+        _server.sendHeader("Connection", "close");
+        _server.send(200, "text/html",
+          ok
+            ? "<html><body style='background:#0f172a;color:#34d399;font-family:sans-serif;padding:24px'>"
+              "<h2>OTA Update Berhasil!</h2><p>ESP32-S3 sedang merestart dengan firmware baru...</p></body></html>"
+            : "<html><body style='background:#0f172a;color:#fb7185;font-family:sans-serif;padding:24px'>"
+              "<h2>OTA Gagal!</h2><p>Pastikan file firmware.bin valid untuk ESP32-S3.</p><a href='/' style='color:#fff'>Kembali</a></body></html>");
+        delay(400);
+        if (ok) {
+          ESP.restart();
+        } else {
+          esp_task_wdt_add(NULL);
+        }
+      },
+      [this]() {
+        HTTPUpload& upload = _server.upload();
+        if (upload.status == UPLOAD_FILE_START) {
+          Serial.printf("[PORTAL OTA] Mulai menerima file: %s\n", upload.filename.c_str());
+          esp_task_wdt_delete(NULL);
+          WiFi.setSleep(false);
+          if (!Update.begin(UPDATE_SIZE_UNKNOWN)) {
+            Update.printError(Serial);
+          }
+        } else if (upload.status == UPLOAD_FILE_WRITE) {
+          if (Update.write(upload.buf, upload.currentSize) != upload.currentSize) {
+            Update.printError(Serial);
+          }
+        } else if (upload.status == UPLOAD_FILE_END) {
+          if (Update.end(true)) {
+            Serial.printf("[PORTAL OTA] Sukses menulis %u bytes! Siap reboot...\n", upload.totalSize);
+          } else {
+            Update.printError(Serial);
+          }
+        }
+      }
+    );
 
     _server.on("/api/live", HTTP_GET, [this]() {
       String j = "{";

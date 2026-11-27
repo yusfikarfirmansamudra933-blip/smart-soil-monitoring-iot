@@ -423,6 +423,95 @@ void setup() {
   );
 }
 
+bool arduinoOtaStarted = false;
+
+void initArduinoOtaIfNeeded() {
+  if (arduinoOtaStarted || WiFi.status() != WL_CONNECTED) return;
+  ArduinoOTA.setHostname("smartsoil-esp32s3");
+  ArduinoOTA.onStart([]() {
+    Serial.println("[ARDUINO OTA] Memulai penerimaan firmware via WiFi LAN...");
+    suspendCurrentTaskWatchdog();
+    WiFi.setSleep(false);
+  });
+  ArduinoOTA.onEnd([]() {
+    Serial.println("\n[ARDUINO OTA] Selesai! Merestart ESP32-S3...");
+  });
+  ArduinoOTA.onError([](ota_error_t error) {
+    Serial.printf("[ARDUINO OTA] Error [%u]\n", error);
+    registerCurrentTaskWatchdog();
+  });
+  ArduinoOTA.begin();
+  arduinoOtaStarted = true;
+  Serial.printf("[ARDUINO OTA] Aktif di %s (smartsoil-esp32s3.local:3232)\n",
+                WiFi.localIP().toString().c_str());
+}
+
+void performCloudHttpsOta(const String& url) {
+  Serial.println("[CLOUD OTA] Mengunduh firmware baru dari: " + url);
+  for (int i = 0; i < 2; i++) {
+    digitalWrite(PIN_ACTIVE_BUZZER, HIGH);
+    delay(90);
+    digitalWrite(PIN_ACTIVE_BUZZER, LOW);
+    delay(90);
+  }
+
+  suspendCurrentTaskWatchdog();
+  WiFi.setSleep(false);
+
+  WiFiClientSecure secureClient;
+  secureClient.setInsecure();
+
+  HTTPClient otaHttp;
+  otaHttp.setFollowRedirects(HTTPC_STRICT_FOLLOW_REDIRECTS);
+  otaHttp.setTimeout(30000);
+
+  bool begun = url.startsWith("https://")
+    ? otaHttp.begin(secureClient, url)
+    : otaHttp.begin(url);
+
+  if (!begun) {
+    Serial.println("[CLOUD OTA] Gagal inisialisasi koneksi HTTP/HTTPS.");
+    registerCurrentTaskWatchdog();
+    return;
+  }
+
+  int httpCode = otaHttp.GET();
+  if (httpCode != HTTP_CODE_OK) {
+    Serial.printf("[CLOUD OTA] Gagal mengunduh firmware, HTTP status: %d\n", httpCode);
+    otaHttp.end();
+    registerCurrentTaskWatchdog();
+    return;
+  }
+
+  int contentLength = otaHttp.getSize();
+  Serial.printf("[CLOUD OTA] Ukuran file firmware: %d bytes\n", contentLength);
+
+  if (!Update.begin(contentLength > 0 ? (size_t)contentLength : UPDATE_SIZE_UNKNOWN)) {
+    Serial.printf("[CLOUD OTA] Partisi OTA tidak cukup: %s\n", Update.errorString());
+    otaHttp.end();
+    registerCurrentTaskWatchdog();
+    return;
+  }
+
+  WiFiClient* stream = otaHttp.getStreamPtr();
+  size_t written = Update.writeStream(*stream);
+  Serial.printf("[CLOUD OTA] Tertulis %u bytes ke partisi OTA.\n", (unsigned)written);
+
+  if (Update.end(true) && Update.isFinished()) {
+    Serial.println("[CLOUD OTA] SUKSES! Firmware baru terverifikasi, merestart ESP32-S3...");
+    otaHttp.end();
+    digitalWrite(PIN_ACTIVE_BUZZER, HIGH);
+    delay(400);
+    digitalWrite(PIN_ACTIVE_BUZZER, LOW);
+    delay(300);
+    ESP.restart();
+  } else {
+    Serial.printf("[CLOUD OTA] Gagal verifikasi OTA: %s\n", Update.errorString());
+    otaHttp.end();
+    registerCurrentTaskWatchdog();
+  }
+}
+
 String getIsoTimestampOrEmpty() {
   time_t now = time(nullptr);
   if (now < 1700000000) return "";
@@ -460,6 +549,11 @@ void loop() {
   portalSnap.pendingOffline = offlineLogger.countPending();
   localPortal.updateLiveSnapshot(portalSnap);
   localPortal.handle();
+
+  if (WiFi.status() == WL_CONNECTED) {
+    initArduinoOtaIfNeeded();
+    ArduinoOTA.handle();
+  }
 
   // Sinkronisasi jam NTP sekali setelah WiFi tersambung
   if (!ntpSynced && WiFi.status() == WL_CONNECTED) {
@@ -513,7 +607,7 @@ void loop() {
 
     String payload = "{";
     payload += "\"device_id\":\"" + String(DEVICE_ID) + "\",";
-    payload += "\"firmware_version\":\"v3.1.0-esp32s3-remote\",";
+    payload += "\"firmware_version\":\"v3.2.0-esp32s3-ota\",";
     if (isoTs.length() > 0) {
       payload += "\"timestamp\":\"" + isoTs + "\",";
     }
@@ -568,7 +662,19 @@ void loop() {
           remoteForcePowerSave = false;
         }
 
-        if (resp.indexOf("\"remote_command\":\"ring_buzzer\"") >= 0) {
+        int otaIdx = resp.indexOf("\"remote_command\":\"ota_update");
+        if (otaIdx >= 0) {
+          int valStart = otaIdx + 18; // panjang '"remote_command":"'
+          int valEnd = resp.indexOf("\"", valStart);
+          String cmdVal = (valEnd > valStart) ? resp.substring(valStart, valEnd) : "ota_update";
+          String otaUrl = String(BASE_API_URL) + "/firmware/esp32s3-latest.bin";
+          if (cmdVal.startsWith("ota_update:") && cmdVal.length() > 15) {
+            otaUrl = cmdVal.substring(11);
+          }
+          http.end();
+          performCloudHttpsOta(otaUrl);
+          return;
+        } else if (resp.indexOf("\"remote_command\":\"ring_buzzer\"") >= 0) {
           ringBuzzerForced();
         } else if (resp.indexOf("\"remote_command\":\"reset_energy\"") >= 0) {
           Serial.println("[REMOTE CMD] Mereset akumulasi Wh Coulomb Meter...");

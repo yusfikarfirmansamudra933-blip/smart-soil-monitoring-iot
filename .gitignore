@@ -35,3 +35,5 @@ next-env.d.ts
 
 .vercel
 .env*
+
+firmware/esp32_smart_soil/.pio/

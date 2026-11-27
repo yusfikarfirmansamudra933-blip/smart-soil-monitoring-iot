@@ -34,6 +34,10 @@ inline void feedHardwareWatchdog() {
   esp_task_wdt_reset();
 }
 
+inline void suspendCurrentTaskWatchdog() {
+  esp_task_wdt_delete(NULL);
+}
+
 // ============================================================================
 // 2. 8MB OPI PSRAM RING BUFFER + TRIMMED MEDIAN-KALMAN FILTER
 // ============================================================================

@@ -1,4 +1,3 @@
-blender/
-node_modules/
-.next/
+firmware/esp32_smart_soil/.pio/
+firmware/esp32_smart_soil/
 .git/

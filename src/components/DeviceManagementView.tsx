@@ -67,13 +67,19 @@ export function DeviceManagementView({
   const [saveMessage, setSaveMessage] = useState<string | null>(null);
   const [sendingRemoteCmd, setSendingRemoteCmd] = useState<string | null>(null);
   const [remoteCmdStatus, setRemoteCmdStatus] = useState<string | null>(null);
+  const [customOtaUrl, setCustomOtaUrl] = useState("");
 
   useEffect(() => {
     setCfg({ ...config });
   }, [config]);
 
   const handleRemoteCommand = async (
-    command: "ring_buzzer" | "reset_energy" | "reboot_mcu" | "toggle_power_save"
+    command:
+      | "ring_buzzer"
+      | "reset_energy"
+      | "reboot_mcu"
+      | "toggle_power_save"
+      | "ota_update"
   ) => {
     setSendingRemoteCmd(command);
     setRemoteCmdStatus(null);
@@ -84,6 +90,9 @@ export function DeviceManagementView({
         body: JSON.stringify({
           device_id: deviceStatus.device_id || "SOIL-001",
           command,
+          ...(command === "ota_update" && customOtaUrl.trim()
+            ? { ota_url: customOtaUrl.trim() }
+            : {}),
         }),
       });
       const json = await res.json();
@@ -438,6 +447,46 @@ export function DeviceManagementView({
               </span>
             </div>
           </button>
+        </div>
+
+        {/* Wireless Cloud & Local OTA Firmware Update Box */}
+        <div className="p-4 rounded-xl bg-indigo-500/10 border border-indigo-500/30 space-y-3 text-xs">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+            <div>
+              <span className="font-bold text-slate-900 dark:text-white block text-sm">
+                Wireless OTA Firmware Update (Tanpa Kabel USB)
+              </span>
+              <span className="text-[11px] text-slate-500">
+                1-Klik tarik firmware terbaru dari Cloud HTTPS Vercel, atau upload file{" "}
+                <code className="font-mono">.bin</code> lokal via WiFi di{" "}
+                <code className="font-mono">http://smartsoil.local</code> /{" "}
+                <code className="font-mono">http://192.168.4.1</code>
+              </span>
+            </div>
+            <span className="font-mono text-[11px] px-2.5 py-1 rounded-lg bg-slate-900/10 dark:bg-white/10 text-slate-700 dark:text-slate-200 shrink-0">
+              Aktif: {deviceStatus.firmware_version}
+            </span>
+          </div>
+
+          <div className="flex flex-col sm:flex-row gap-2.5">
+            <input
+              type="url"
+              value={customOtaUrl}
+              onChange={(e) => setCustomOtaUrl(e.target.value)}
+              placeholder="Kosongkan untuk pakai firmware terbaru bawaan (/firmware/esp32s3-latest.bin) atau isi URL .bin kustom"
+              className="flex-1 px-3 py-2 rounded-lg bg-white dark:bg-slate-900 border border-indigo-500/30 text-xs"
+            />
+            <button
+              type="button"
+              disabled={sendingRemoteCmd !== null}
+              onClick={() => handleRemoteCommand("ota_update")}
+              className="px-4 py-2 rounded-lg bg-indigo-600 hover:bg-indigo-500 text-white font-bold transition shrink-0 disabled:opacity-50"
+            >
+              {sendingRemoteCmd === "ota_update"
+                ? "Mengirim OTA..."
+                : "Update Firmware via OTA"}
+            </button>
+          </div>
         </div>
 
         {remoteCmdStatus && (
