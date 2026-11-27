@@ -1,4 +1,4 @@
-import { SoilDeviceStatus, SoilTelemetryRecord } from "./types";
+import { SoilTelemetryRecord } from "./types";
 
 export interface CropIdealProfile {
   key: string;
@@ -24,7 +24,7 @@ export const INDONESIAN_CROP_PROFILES: CropIdealProfile[] = [
     moistureMax: 70,
     tempMin: 21,
     tempMax: 29,
-    tips: "Jaga kelembapan stabil 55–70% (jangan terlalu becek agar bunga tidak rontok & terhindar layu fusarium), tambahkan kalium & kalsium.",
+    tips: "Jaga kelembapan stabil 55–70% agar bunga tidak rontok & bebas layu fusarium; rutin semprot MKP + Kalsium Boron.",
   },
   {
     key: "cabai",
@@ -36,7 +36,7 @@ export const INDONESIAN_CROP_PROFILES: CropIdealProfile[] = [
     moistureMax: 75,
     tempMin: 22,
     tempMax: 30,
-    tips: "Cabai tumbuh optimal di tanah gembur agak netral (pH 6.0–6.8). Jika pH < 5.8 berikan kapur dolomit, dan pastikan drainase bedengan lancar.",
+    tips: "Cabai tumbuh optimal di tanah gembur pH 6.0–6.8 dengan bedengan tinggi agar akar tidak tergenang saat hujan.",
   },
   {
     key: "tomat",
@@ -48,31 +48,31 @@ export const INDONESIAN_CROP_PROFILES: CropIdealProfile[] = [
     moistureMax: 75,
     tempMin: 20,
     tempMax: 28,
-    tips: "Tomat membutuhkan kelembapan konsisten agar buah tidak pecah (cracking) dan kalsium cukup untuk mencegah busuk ujung buah.",
+    tips: "Jaga kelembapan stabil agar kulit buah tomat tidak pecah (cracking) dan cukupi kalsium untuk mencegah busuk pantat buah.",
   },
   {
     key: "padi",
     cropName: "Padi Sawah",
-    keywords: ["padi", "gabah", "beras", "ciherang", "inpari"],
+    keywords: ["padi", "gabah", "ciherang", "inpari"],
     phMin: 5.5,
     phMax: 7.0,
     moistureMin: 75,
     moistureMax: 95,
     tempMin: 24,
     tempMax: 32,
-    tips: "Padi membutuhkan tanah jenuh air pada fase vegetatif (75–95%) dan pengeringan berkala (intermittent) menjelang pemasakan bulir.",
+    tips: "Terapkan pengairan berselang (macak-macak) saat anakan aktif agar perakaran kuat dan hemat air.",
   },
   {
     key: "bawang_merah",
     cropName: "Bawang Merah",
-    keywords: ["bawang merah", "brambang", "bawang"],
+    keywords: ["bawang merah", "brambang"],
     phMin: 5.8,
     phMax: 6.8,
     moistureMin: 55,
     moistureMax: 70,
     tempMin: 25,
     tempMax: 32,
-    tips: "Umbi bawang merah sensitif terhadap genangan air; jaga tanah lembap namun poros agar umbi tidak busuk.",
+    tips: "Umbi bawang merah membutuhkan sinar matahari penuh dan tanah poros tidak menggenang.",
   },
   {
     key: "bawang_putih",
@@ -84,7 +84,7 @@ export const INDONESIAN_CROP_PROFILES: CropIdealProfile[] = [
     moistureMax: 70,
     tempMin: 16,
     tempMax: 25,
-    tips: "Cocok di dataran tinggi berhawa sejuk dengan tanah gembur kaya bahan organik.",
+    tips: "Optimal di dataran tinggi sejuk dengan tanah gembur kaya kompos matang.",
   },
   {
     key: "jagung",
@@ -96,7 +96,7 @@ export const INDONESIAN_CROP_PROFILES: CropIdealProfile[] = [
     moistureMax: 70,
     tempMin: 22,
     tempMax: 32,
-    tips: "Pastikan kecukupan air terutama saat fase pembentukan tongkol dan pengisian biji.",
+    tips: "Pastikan air & pupuk Nitrogen-Kalium tercukupi saat pembentukan bunga jantan dan pengisian tongkol.",
   },
   {
     key: "melon",
@@ -108,7 +108,7 @@ export const INDONESIAN_CROP_PROFILES: CropIdealProfile[] = [
     moistureMax: 70,
     tempMin: 24,
     tempMax: 31,
-    tips: "Kurangi penyiraman menjelang panen agar kadar kemanisan (Brix) buah melon meningkat optimal.",
+    tips: "Kurangi penyiraman 7–10 hari menjelang panen agar rasa buah melon makin manis (Brix tinggi).",
   },
   {
     key: "semangka",
@@ -120,7 +120,7 @@ export const INDONESIAN_CROP_PROFILES: CropIdealProfile[] = [
     moistureMax: 68,
     tempMin: 25,
     tempMax: 33,
-    tips: "Semangka menyukai tanah berpasir hangat dengan drainase baik dan sinar matahari penuh.",
+    tips: "Cocok di tanah lempung berpasir hangat dengan drainase sangat lancar.",
   },
   {
     key: "kentang",
@@ -132,7 +132,7 @@ export const INDONESIAN_CROP_PROFILES: CropIdealProfile[] = [
     moistureMax: 75,
     tempMin: 15,
     tempMax: 22,
-    tips: "Kentang menyukai tanah sedikit asam (pH 5.2–6.2) untuk menekan penyakit kudis umbi (scab).",
+    tips: "Tanah sedikit asam (pH 5.2–6.2) membantu menekan jamur kudis umbi kentang.",
   },
   {
     key: "stroberi",
@@ -144,31 +144,115 @@ export const INDONESIAN_CROP_PROFILES: CropIdealProfile[] = [
     moistureMax: 80,
     tempMin: 16,
     tempMax: 24,
-    tips: "Gunakan mulsa agar buah tidak menyentuh tanah lembap secara langsung.",
+    tips: "Beri mulsa plastik/jerami agar buah stroberi bersih dan tidak busuk menyentuh tanah basah.",
+  },
+  {
+    key: "durian",
+    cropName: "Durian",
+    keywords: ["durian", "musang king", "bawor", "montong"],
+    phMin: 6.0,
+    phMax: 7.0,
+    moistureMin: 55,
+    moistureMax: 72,
+    tempMin: 23,
+    tempMax: 31,
+    tips: "Buat gundukan/busut agar leher akar durian tidak tergenang air pemicu kanker batang Phytophthora.",
+  },
+  {
+    key: "anggur",
+    cropName: "Anggur",
+    keywords: ["anggur", "anggur import"],
+    phMin: 6.2,
+    phMax: 7.2,
+    moistureMin: 45,
+    moistureMax: 65,
+    tempMin: 23,
+    tempMax: 32,
+    tips: "Anggur menyukai media sangat poros (sekam bakar + pasir + kompos) dan stres air terukur sebelum pemangkasan pembuahan.",
+  },
+  {
+    key: "alpukat",
+    cropName: "Alpukat",
+    keywords: ["alpukat", "alpokat", "miki", "aligator"],
+    phMin: 5.8,
+    phMax: 6.8,
+    moistureMin: 50,
+    moistureMax: 68,
+    tempMin: 20,
+    tempMax: 30,
+    tips: "Akar alpukat sangat peka busuk akar jika tergenang; pastikan lubang tanam kaya kompos & drainase tinggi.",
+  },
+  {
+    key: "mangga",
+    cropName: "Mangga / Kelengkeng",
+    keywords: ["mangga", "kelengkeng", "lengkeng", "rambutan", "jambu"],
+    phMin: 5.8,
+    phMax: 7.0,
+    moistureMin: 50,
+    moistureMax: 68,
+    tempMin: 23,
+    tempMax: 32,
+    tips: "Berikan pupuk tinggi Fosfat & Kalium setelah panen dan menjelang induksi pembungaan.",
+  },
+  {
+    key: "pisang",
+    cropName: "Pisang / Pepaya",
+    keywords: ["pisang", "cavendish", "pepaya", "california"],
+    phMin: 5.8,
+    phMax: 7.0,
+    moistureMin: 60,
+    moistureMax: 78,
+    tempMin: 23,
+    tempMax: 31,
+    tips: "Sangat membutuhkan bahan organik tinggi, Kalium cukup, dan parit drainase agar terhindar layu panama/busuk akar.",
+  },
+  {
+    key: "jeruk",
+    cropName: "Jeruk / Lemon",
+    keywords: ["jeruk", "lemon", "nipis"],
+    phMin: 5.8,
+    phMax: 6.8,
+    moistureMin: 55,
+    moistureMax: 70,
+    tempMin: 22,
+    tempMax: 31,
+    tips: "Perhatikan unsur mikro Seng (Zn) dan Magnesium (Mg) agar daun jeruk tidak belang kekuningan.",
+  },
+  {
+    key: "sawit",
+    cropName: "Kelapa Sawit",
+    keywords: ["sawit", "kelapa sawit", "kelapa"],
+    phMin: 5.0,
+    phMax: 6.5,
+    moistureMin: 60,
+    moistureMax: 80,
+    tempMin: 24,
+    tempMax: 32,
+    tips: "Sawit membutuhkan Kalium (KCl), Magnesium (Kieserit/Dolomit), dan Boron rutin di piringan pohon.",
   },
   {
     key: "kopi",
-    cropName: "Kopi",
-    keywords: ["kopi", "arabika", "robusta"],
+    cropName: "Kopi / Kakao",
+    keywords: ["kopi", "arabika", "robusta", "kakao", "cokelat", "teh", "vanili", "lada", "cengkeh"],
     phMin: 5.5,
     phMax: 6.5,
     moistureMin: 55,
     moistureMax: 75,
     tempMin: 18,
     tempMax: 28,
-    tips: "Kopi tumbuh subur pada tanah kaya humus sedikit asam dengan naungan terukur.",
+    tips: "Tanaman perkebunan menyukai tanah kaya humus sedikit asam dengan pohon penaung terukur.",
   },
   {
     key: "sawi",
-    cropName: "Sawi / Pakcoy",
-    keywords: ["sawi", "pakcoy", "pokcoy", "caisim"],
+    cropName: "Sawi / Pakcoy / Bayam",
+    keywords: ["sawi", "pakcoy", "pokcoy", "caisim", "bayam"],
     phMin: 6.0,
     phMax: 7.0,
     moistureMin: 65,
     moistureMax: 80,
     tempMin: 20,
     tempMax: 29,
-    tips: "Sayuran daun membutuhkan kelembapan tanah merata agar daun tetap renyah dan tidak pahit.",
+    tips: "Sayuran daun membutuhkan kelembapan merata dan suplai Nitrogen organik/NPK ringan agar daun renyah.",
   },
   {
     key: "kangkung",
@@ -180,79 +264,91 @@ export const INDONESIAN_CROP_PROFILES: CropIdealProfile[] = [
     moistureMax: 90,
     tempMin: 23,
     tempMax: 32,
-    tips: "Kangkung darat maupun air sangat responsif terhadap nitrogen dan tanah basah.",
+    tips: "Tumbuh sangat cepat pada tanah basah kaya kompos dan Nitrogen.",
   },
   {
     key: "terong",
-    cropName: "Terong",
-    keywords: ["terong", "terung"],
+    cropName: "Terong / Okra",
+    keywords: ["terong", "terung", "okra", "pare", "oyong", "gambas"],
     phMin: 5.8,
     phMax: 6.8,
     moistureMin: 60,
     moistureMax: 75,
     tempMin: 22,
     tempMax: 31,
-    tips: "Jaga kelembapan stabil selama pembungaan agar bakal buah terong mengkilap dan tidak kerdil.",
+    tips: "Jaga kelembapan stabil selama pembungaan agar buah tumbuh lurus, mengkilap, dan tidak rontok.",
   },
   {
     key: "timun",
-    cropName: "Mentimun",
-    keywords: ["timun", "mentimun", "ketimun"],
+    cropName: "Mentimun / Labu",
+    keywords: ["timun", "mentimun", "ketimun", "labu", "zucchini"],
     phMin: 6.0,
     phMax: 7.0,
     moistureMin: 65,
     moistureMax: 80,
     tempMin: 22,
     tempMax: 30,
-    tips: "Kekurangan air pada mentimun dapat memicu rasa pahit pada pangkal buah.",
+    tips: "Hindari kekeringan mendadak agar pangkal buah mentimun tidak terasa pahit.",
   },
   {
     key: "kedelai",
-    cropName: "Kedelai / Kacang Tanah",
-    keywords: ["kedelai", "kacang tanah", "kacang panjang", "buncis"],
+    cropName: "Kedelai / Kacang-kacangan",
+    keywords: ["kedelai", "kacang tanah", "kacang panjang", "buncis", "edamame", "kacang hijau"],
     phMin: 6.0,
     phMax: 7.0,
     moistureMin: 50,
     moistureMax: 68,
     tempMin: 23,
     tempMax: 31,
-    tips: "pH mendekati netral membantu bintil akar Rhizobium mengikat nitrogen secara maksimal.",
+    tips: "pH netral (6.0–7.0) mengoptimalkan bakteri Rhizobium pada bintil akar untuk mengikat Nitrogen alami.",
   },
   {
     key: "jahe",
-    cropName: "Jahe / Rimpang",
-    keywords: ["jahe", "kunyit", "kencur", "lengkuas", "temulawak"],
+    cropName: "Jahe / Rimpang / Porang",
+    keywords: ["jahe", "kunyit", "kencur", "lengkuas", "temulawak", "porang"],
     phMin: 5.8,
     phMax: 6.8,
     moistureMin: 60,
     moistureMax: 75,
     tempMin: 24,
     tempMax: 31,
-    tips: "Gemburkan tanah sekitar rimpang secara berkala dan hindari genangan air.",
+    tips: "Bumbun tanah gembur di sekitar rumpun agar rimpang membesar dan tidak tersengat matahari langsung.",
+  },
+  {
+    key: "singkong",
+    cropName: "Singkong / Ubi Jalar / Talas",
+    keywords: ["singkong", "ketela", "ubi jalar", "ubi", "talas"],
+    phMin: 5.5,
+    phMax: 6.8,
+    moistureMin: 48,
+    moistureMax: 68,
+    tempMin: 23,
+    tempMax: 32,
+    tips: "Perbanyak unsur Kalium (abu sekam / KCl) pada umur 2–3 bulan untuk pembesaran umbi.",
   },
   {
     key: "selada",
-    cropName: "Selada / Kubis",
-    keywords: ["selada", "kubis", "kol", "brokoli"],
+    cropName: "Selada / Kubis / Brokoli / Wortel",
+    keywords: ["selada", "kubis", "kol", "brokoli", "bunga kol", "wortel", "lobak", "seledri", "daun bawang"],
     phMin: 6.0,
     phMax: 7.0,
     moistureMin: 65,
     moistureMax: 80,
     tempMin: 17,
     tempMax: 25,
-    tips: "pH di atas 6.0 penting untuk mencegah penyakit akar gada (Plasmodiophora) pada kubis-kubisan.",
+    tips: "Pertahankan pH >= 6.0 untuk mencegah penyakit akar gada pada keluarga kubis-kubisan.",
   },
   {
-    key: "jeruk",
-    cropName: "Jeruk / Pepaya",
-    keywords: ["jeruk", "pepaya", "mangga", "alpukat"],
+    key: "tanaman_hias",
+    cropName: "Tanaman Hias (Anggrek / Aglonema / Mawar)",
+    keywords: ["anggrek", "aglonema", "monstera", "mawar", "krisan", "melati", "bougenville", "bonsai"],
     phMin: 5.8,
     phMax: 6.8,
-    moistureMin: 55,
-    moistureMax: 72,
-    tempMin: 22,
-    tempMax: 31,
-    tips: "Pastikan perakaran tidak tergenang air hujan lebih dari 24 jam.",
+    moistureMin: 50,
+    moistureMax: 70,
+    tempMin: 20,
+    tempMax: 29,
+    tips: "Gunakan media poros (sekam bakar, pakis, cocopeat tercuci) agar akar mendapat aerasi oksigen cukup.",
   },
 ];
 
@@ -282,37 +378,40 @@ export function buildSensorEvaluationSummary(
   }
 ): string {
   if (!deviceOnline || !latest) {
-    return `Saat ini perangkat ESP32-S3 sedang offline atau belum mengirim data baru, namun target ideal untuk **${target.cropName}** sudah tersimpan dan langsung aktif begitu sensor online.`;
+    return `Saat ini ESP32-S3 sedang offline, namun target ideal **${target.cropName}** sudah tersimpan dan langsung aktif saat sensor online.`;
   }
 
   const lines: string[] = [];
 
   if (latest.soil_ph === null || latest.sensor_status?.ph === "not_connected") {
-    lines.push(`- **Soil pH:** Sensor belum terhubung (Target ideal: **${target.phMin.toFixed(1)} – ${target.phMax.toFixed(1)} pH**).`);
+    lines.push(`- **Soil pH:** Belum terhubung (Target ideal: **${target.phMin.toFixed(1)} – ${target.phMax.toFixed(1)} pH**).`);
   } else if (latest.soil_ph < target.phMin) {
-    lines.push(`- **Soil pH (${latest.soil_ph.toFixed(2)}):** Terlalu asam dibanding target **${target.phMin.toFixed(1)}–${target.phMax.toFixed(1)}**. Disarankan pemberian kapur pertanian/dolomit.`);
+    const diff = target.phMin - latest.soil_ph;
+    const dolomitTonHa = Math.max(0.5, Number((diff * 1.5).toFixed(1)));
+    const dolomitGramTanaman = Math.max(15, Math.round(diff * 35));
+    lines.push(`- **Soil pH (${latest.soil_ph.toFixed(2)}):** Terlalu asam (target **${target.phMin.toFixed(1)}–${target.phMax.toFixed(1)}**). Taburkan **kapur dolomit ~${dolomitGramTanaman} gram/lubang tanam** (~${dolomitTonHa} ton/ha).`);
   } else if (latest.soil_ph > target.phMax) {
-    lines.push(`- **Soil pH (${latest.soil_ph.toFixed(2)}):** Terlalu basa dibanding target **${target.phMin.toFixed(1)}–${target.phMax.toFixed(1)}**. Tambahkan kompos matang/bahan organik.`);
+    lines.push(`- **Soil pH (${latest.soil_ph.toFixed(2)}):** Terlalu basa (target **${target.phMin.toFixed(1)}–${target.phMax.toFixed(1)}**). Tambahkan kompos matang, asam humat, atau belerang pertanian.`);
   } else {
-    lines.push(`- **Soil pH (${latest.soil_ph.toFixed(2)}):** **Ideal** (masuk rentang **${target.phMin.toFixed(1)}–${target.phMax.toFixed(1)}**).`);
+    lines.push(`- **Soil pH (${latest.soil_ph.toFixed(2)}):** **Ideal** (sesuai target **${target.phMin.toFixed(1)}–${target.phMax.toFixed(1)}**).`);
   }
 
   if (latest.soil_moisture === null || latest.sensor_status?.dms === "not_connected") {
-    lines.push(`- **Soil Moisture:** Sensor belum terhubung (Target ideal: **${target.moistureMin}% – ${target.moistureMax}%**).`);
+    lines.push(`- **Soil Moisture:** Belum terhubung (Target ideal: **${target.moistureMin}% – ${target.moistureMax}%**).`);
   } else if (latest.soil_moisture < target.moistureMin) {
-    lines.push(`- **Soil Moisture (${latest.soil_moisture.toFixed(1)}%):** Tanah kering (di bawah **${target.moistureMin}%**). Segera lakukan penyiraman.`);
+    lines.push(`- **Soil Moisture (${latest.soil_moisture.toFixed(1)}%):** Kering (di bawah **${target.moistureMin}%**). Segera lakukan penyiraman.`);
   } else if (latest.soil_moisture > target.moistureMax) {
-    lines.push(`- **Soil Moisture (${latest.soil_moisture.toFixed(1)}%):** Terlalu basah (di atas **${target.moistureMax}%**). Kurangi penyiraman & cek drainase.`);
+    lines.push(`- **Soil Moisture (${latest.soil_moisture.toFixed(1)}%):** Terlalu basah (di atas **${target.moistureMax}%**). Hentikan siram sementara & buka saluran drainase.`);
   } else {
     lines.push(`- **Soil Moisture (${latest.soil_moisture.toFixed(1)}%):** **Ideal** (masuk rentang **${target.moistureMin}%–${target.moistureMax}%**).`);
   }
 
   if (latest.soil_temperature === null || latest.sensor_status?.temperature === "not_connected") {
-    lines.push(`- **Suhu Tanah:** Sensor DS18B20 belum terhubung (Target ideal: **${target.tempMin}°C – ${target.tempMax}°C**).`);
+    lines.push(`- **Suhu Tanah:** DS18B20 belum terhubung (Target ideal: **${target.tempMin}°C – ${target.tempMax}°C**).`);
   } else if (latest.soil_temperature < target.tempMin) {
-    lines.push(`- **Suhu Tanah (${latest.soil_temperature.toFixed(1)}°C):** Lebih dingin dari target (**${target.tempMin}–${target.tempMax}°C**).`);
+    lines.push(`- **Suhu Tanah (${latest.soil_temperature.toFixed(1)}°C):** Dingin (target **${target.tempMin}–${target.tempMax}°C**).`);
   } else if (latest.soil_temperature > target.tempMax) {
-    lines.push(`- **Suhu Tanah (${latest.soil_temperature.toFixed(1)}°C):** Lebih panas dari target (**${target.tempMin}–${target.tempMax}°C**). Gunakan mulsa penutup tanah.`);
+    lines.push(`- **Suhu Tanah (${latest.soil_temperature.toFixed(1)}°C):** Panas (di atas **${target.tempMax}°C**). Pasang mulsa jerami/perak & siram pagi/sore.`);
   } else {
     lines.push(`- **Suhu Tanah (${latest.soil_temperature.toFixed(1)}°C):** **Ideal** (masuk rentang **${target.tempMin}–${target.tempMax}°C**).`);
   }
