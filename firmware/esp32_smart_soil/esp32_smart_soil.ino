@@ -513,6 +513,7 @@ void loop() {
 
     String payload = "{";
     payload += "\"device_id\":\"" + String(DEVICE_ID) + "\",";
+    payload += "\"firmware_version\":\"v3.1.0-esp32s3-remote\",";
     if (isoTs.length() > 0) {
       payload += "\"timestamp\":\"" + isoTs + "\",";
     }

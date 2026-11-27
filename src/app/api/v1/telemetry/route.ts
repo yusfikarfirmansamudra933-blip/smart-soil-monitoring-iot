@@ -12,7 +12,7 @@ import { DEFAULT_CONFIG } from "@/lib/default-config";
 const DEVICE_ID_REGEX = /^[A-Za-z0-9_-]{1,32}$/;
 const rateLimitMap = new Map<string, { count: number; windowStart: number }>();
 const RATE_LIMIT_WINDOW_MS = 60_000;
-const RATE_LIMIT_MAX_REQ = 30;
+const RATE_LIMIT_MAX_REQ = 120;
 
 function isRateLimited(key: string): boolean {
   const now = Date.now();
@@ -361,13 +361,25 @@ export async function POST(req: NextRequest) {
         .eq("device_id", deviceId);
     }
 
+    if (
+      typeof body.firmware_version === "string" &&
+      body.firmware_version.trim().length > 0
+    ) {
+      await supabase
+        .from("soil_devices")
+        .update({ firmware_version: body.firmware_version.trim() })
+        .eq("device_id", deviceId);
+    }
+
     return NextResponse.json(
       {
         status: "ok",
         message: "Telemetry ingested successfully",
         data: inserted,
         triggered_alerts: alertsToInsert.length,
-        buzzer_command: effectiveBuzzerActive,
+        buzzer_command: Boolean(
+          effectiveBuzzerActive || pendingCommand === "ring_buzzer"
+        ),
         remote_command: pendingCommand,
         force_power_save: Boolean(config.force_power_save),
       },
