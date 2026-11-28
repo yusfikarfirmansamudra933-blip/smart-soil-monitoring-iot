@@ -102,24 +102,11 @@ public:
       if (_dmsCtrlPin >= 0) {
         digitalWrite((uint8_t)_dmsCtrlPin, LOW);
       }
-      // 1. Cek apakah pin benar-benar tidak terhubung (floating)
-      if (isAnalogPinFloating(_pinOrPort)) {
-        return res;
-      }
-      // 2. Ambil 8 sampel sepanjang 1 siklus gelombang listrik 50Hz (20ms) untuk mendeteksi kabel terbuka/dicabut
-      int minRaw = 4095;
-      int maxRaw = 0;
+      // Jangan beri pulsa pull-up/pull-down ke output DMS karena impedansi & kapasitor RC DMS sensitif;
+      // ratakan 8 sampel cepat agar bebas ripple sebelum masuk filter Kalman PSRAM.
       long sumRaw = 0;
       for (int i = 0; i < 8; i++) {
-        int v = analogRead(_pinOrPort);
-        if (v < minRaw) minRaw = v;
-        if (v > maxRaw) maxRaw = v;
-        sumRaw += v;
-        delayMicroseconds(2500);
-      }
-      // Jika ayunan noise 50Hz > 500 count, pin ADC mengambang (sensor pH dicabut / tidak terpasang)
-      if ((maxRaw - minRaw) > 500) {
-        return res;
+        sumRaw += analogRead(_pinOrPort);
       }
       int raw = (int)(sumRaw / 8);
       res.connected = true;

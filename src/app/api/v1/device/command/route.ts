@@ -48,9 +48,9 @@ export async function POST(req: NextRequest) {
       }
 
       const basePh =
-        latestRow.soil_ph_raw !== null && latestRow.soil_ph_raw !== undefined
-          ? -0.0233 * (Number(latestRow.soil_ph_raw) / 4.0) + 12.698
-          : Number(latestRow.soil_ph) - Number(baseCfg.ph_cal_offset ?? 0);
+        latestRow.soil_ph !== null && latestRow.soil_ph !== undefined
+          ? Number(latestRow.soil_ph) - Number(baseCfg.ph_cal_offset ?? 0)
+          : -0.0233 * (Number(latestRow.soil_ph_raw) / 4.0) + 12.698;
 
       const newOffset = Number((targetPh - basePh).toFixed(2));
 
