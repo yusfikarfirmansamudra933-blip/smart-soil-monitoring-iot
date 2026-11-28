@@ -116,7 +116,7 @@ private:
         "<div class='card'><h1>Smart Soil ESP32-S3 N16R8 (Wireless OTA)</h1>"
         "<div class='sub'>WiFi: <b>" + (WiFi.status() == WL_CONNECTED ? WiFi.SSID() + " (" + String(WiFi.RSSI()) + " dBm)" : String("Terputus")) + "</b>"
         " • PSRAM Free: <b>" + String(ESP.getFreePsram() / 1024) + " KB</b>"
-        " • Mode: <b>" + String(_live.powerSave ? "Power Save 80MHz" : "Normal 240MHz") + "</b></div></div>"
+        " • CPU: <b>Real-Time 240MHz</b></div></div>"
         "<div class='card'><h2>Pembacaan Sensor Real-Time (Dual-Core PSRAM Filter)</h2><div class='grid'>"
         "<div class='box'><span class='lbl'>Soil pH</span><span class='val' id='ph'>" + fmtFloatOrNa(_live.soilPh, 2, "pH") + "</span></div>"
         "<div class='box'><span class='lbl'>Soil Moisture</span><span class='val' id='moist'>" + fmtFloatOrNa(_live.soilMoisture, 1, "%") + "</span></div>"

@@ -56,7 +56,6 @@ export function EnergyMonitoringView({
   const solarCurrent = esp32Online ? latest?.solar_current ?? null : null;
   const solarPower = esp32Online ? latest?.solar_power ?? null : null;
   const solarEnergyWh = esp32Online ? latest?.solar_energy_wh ?? null : null;
-  const powerSaveMode = esp32Online ? Boolean(latest?.power_save_mode) : false;
 
   const chargingStatus = determineChargingStatus({
     esp32Online,
@@ -299,7 +298,7 @@ export function EnergyMonitoringView({
           )}
         </div>
 
-        {/* 12. Adaptive Power Mode (ESP32-S3 CPU Scaling) */}
+        {/* 12. Mode CPU ESP32-S3 */}
         <div className="p-5 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 space-y-2">
           <div className="flex items-center justify-between text-xs font-semibold text-slate-500">
             <span>12. Mode CPU ESP32-S3</span>
@@ -310,13 +309,9 @@ export function EnergyMonitoringView({
               <span className="text-base font-bold text-slate-400 dark:text-slate-500">
                 Offline
               </span>
-            ) : powerSaveMode ? (
-              <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-lg text-sm font-bold border bg-amber-500/15 text-amber-600 dark:text-amber-400 border-amber-500/30">
-                Hemat Daya (80 MHz)
-              </span>
             ) : (
               <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-lg text-sm font-bold border bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border-emerald-500/30">
-                Normal (240 MHz)
+                Real-Time (240 MHz)
               </span>
             )}
           </div>

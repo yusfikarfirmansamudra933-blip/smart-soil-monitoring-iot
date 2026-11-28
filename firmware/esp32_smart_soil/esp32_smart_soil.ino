@@ -83,7 +83,6 @@ HardwareSerial ModemSerial(2);
 ModemQuotaReader modemReader(MODEM_SMS_MODE, MODEM_ROUTER_IP, MODEM_WEB_PASSWORD, &ModemSerial);
 OfflineTelemetryLogger offlineLogger;
 CoulombEnergyMeter coulombMeter;
-AdaptivePowerManager powerManager;
 LocalConfigPortal localPortal;
 
 ModularSoilPhDriver  phSensor(PH_MODE_ANALOG_ADC, PIN_SOIL_PH_ADC, 0.0f, PIN_DMS_CTRL);
@@ -302,8 +301,6 @@ float extractJsonNumber(const String& json, const char* key, float fallback) {
   return json.substring(idx, idx + 16).toFloat();
 }
 
-bool remoteForcePowerSave = false;
-
 void ringBuzzerForced() {
   Serial.println("[REMOTE CMD] Membunyikan Active Buzzer 3x dari Dashboard Web...");
   for (int i = 0; i < 3; i++) {
@@ -334,19 +331,17 @@ void syncRemoteDeviceConfig() {
     if (bLow >= 9.0f && bLow <= 13.0f) batteryLowAlarmV = bLow;
     if (body.indexOf("\"buzzer_enabled\":false") >= 0) buzzerEnabled = false;
     else if (body.indexOf("\"buzzer_enabled\":true") >= 0) buzzerEnabled = true;
-    if (body.indexOf("\"force_power_save\":true") >= 0) remoteForcePowerSave = true;
-    else if (body.indexOf("\"force_power_save\":false") >= 0) remoteForcePowerSave = false;
 
-    Serial.printf("[CONFIG SYNC] KuotaMin: %.0f MB | PulsaMin: Rp %.0f | BattLow: %.2fV | Buzzer: %s | ForceEco: %s\n",
+    Serial.printf("[CONFIG SYNC] KuotaMin: %.0f MB | PulsaMin: Rp %.0f | BattLow: %.2fV | Buzzer: %s\n",
                   modemQuotaMinMb, modemCreditMinRp, batteryLowAlarmV,
-                  buzzerEnabled ? "ON" : "OFF",
-                  remoteForcePowerSave ? "ON" : "OFF");
+                  buzzerEnabled ? "ON" : "OFF");
   }
   http.end();
 }
 
 void setup() {
   Serial.begin(115200);
+  setCpuFrequencyMhz(240);
   analogReadResolution(12);
 
   // Matikan LED RGB onboard ESP32-S3 (GPIO 48 / 38)
@@ -408,8 +403,9 @@ void setup() {
   offlineLogger.begin();
   coulombMeter.begin(44.0f);
 
-  // Mulai Portal Konfigurasi Lokal + Koneksi WiFi dari NVS
+  // Mulai Portal Konfigurasi Lokal + Koneksi WiFi dari NVS (tanpa WiFi sleep agar real-time)
   localPortal.begin(MODEM_AP_SSID, MODEM_AP_PASS, onPortalCalibrationChanged, PIN_BOOT_BUTTON);
+  WiFi.setSleep(false);
 
   // Jalankan task pembacaan sensor & Coulomb Counting di Core 0
   xTaskCreatePinnedToCore(
@@ -448,6 +444,9 @@ void initArduinoOtaIfNeeded() {
 
 void performCloudHttpsOta(const String& url) {
   Serial.println("[CLOUD OTA] Mengunduh firmware baru dari: " + url);
+  setCpuFrequencyMhz(240);
+  WiFi.setSleep(false);
+
   for (int i = 0; i < 2; i++) {
     digitalWrite(PIN_ACTIVE_BUZZER, HIGH);
     delay(90);
@@ -456,14 +455,17 @@ void performCloudHttpsOta(const String& url) {
   }
 
   suspendCurrentTaskWatchdog();
-  WiFi.setSleep(false);
+  if (core0TaskHandle != nullptr) {
+    esp_task_wdt_delete(core0TaskHandle);
+    vTaskSuspend(core0TaskHandle);
+  }
 
   WiFiClientSecure secureClient;
   secureClient.setInsecure();
 
   HTTPClient otaHttp;
   otaHttp.setFollowRedirects(HTTPC_STRICT_FOLLOW_REDIRECTS);
-  otaHttp.setTimeout(30000);
+  otaHttp.setTimeout(60000);
 
   bool begun = url.startsWith("https://")
     ? otaHttp.begin(secureClient, url)
@@ -471,6 +473,10 @@ void performCloudHttpsOta(const String& url) {
 
   if (!begun) {
     Serial.println("[CLOUD OTA] Gagal inisialisasi koneksi HTTP/HTTPS.");
+    if (core0TaskHandle != nullptr) {
+      vTaskResume(core0TaskHandle);
+      esp_task_wdt_add(core0TaskHandle);
+    }
     registerCurrentTaskWatchdog();
     return;
   }
@@ -479,6 +485,10 @@ void performCloudHttpsOta(const String& url) {
   if (httpCode != HTTP_CODE_OK) {
     Serial.printf("[CLOUD OTA] Gagal mengunduh firmware, HTTP status: %d\n", httpCode);
     otaHttp.end();
+    if (core0TaskHandle != nullptr) {
+      vTaskResume(core0TaskHandle);
+      esp_task_wdt_add(core0TaskHandle);
+    }
     registerCurrentTaskWatchdog();
     return;
   }
@@ -489,6 +499,10 @@ void performCloudHttpsOta(const String& url) {
   if (!Update.begin(contentLength > 0 ? (size_t)contentLength : UPDATE_SIZE_UNKNOWN)) {
     Serial.printf("[CLOUD OTA] Partisi OTA tidak cukup: %s\n", Update.errorString());
     otaHttp.end();
+    if (core0TaskHandle != nullptr) {
+      vTaskResume(core0TaskHandle);
+      esp_task_wdt_add(core0TaskHandle);
+    }
     registerCurrentTaskWatchdog();
     return;
   }
@@ -508,6 +522,10 @@ void performCloudHttpsOta(const String& url) {
   } else {
     Serial.printf("[CLOUD OTA] Gagal verifikasi OTA: %s\n", Update.errorString());
     otaHttp.end();
+    if (core0TaskHandle != nullptr) {
+      vTaskResume(core0TaskHandle);
+      esp_task_wdt_add(core0TaskHandle);
+    }
     registerCurrentTaskWatchdog();
   }
 }
@@ -544,7 +562,7 @@ void loop() {
   portalSnap.battP = snap.battP;
   portalSnap.battWh = snap.battWh;
   portalSnap.battRemHours = snap.battRemHours;
-  portalSnap.powerSave = powerManager.isPowerSaveActive();
+  portalSnap.powerSave = false;
   portalSnap.psramActive = snap.psramActive;
   portalSnap.pendingOffline = offlineLogger.countPending();
   localPortal.updateLiveSnapshot(portalSnap);
@@ -580,13 +598,8 @@ void loop() {
     syncRemoteDeviceConfig();
   }
 
-  // Evaluasi Adaptive Power Mode berdasarkan tegangan baterai 3S Li-ion atau perintah paksa Web
-  unsigned long effectiveSendIntervalMs = powerManager.evaluateAndApply(
-    inaBatteryOk, snap.battV, batteryLowAlarmV, sendIntervalMs, localPortal.isApActive(), remoteForcePowerSave
-  );
-
   if ((!firstTelemetrySent && WiFi.status() == WL_CONNECTED && millis() > 3500) ||
-      (millis() - lastSendMs >= effectiveSendIntervalMs)) {
+      (millis() - lastSendMs >= sendIntervalMs)) {
     firstTelemetrySent = true;
     lastSendMs = millis();
 
@@ -607,7 +620,7 @@ void loop() {
 
     String payload = "{";
     payload += "\"device_id\":\"" + String(DEVICE_ID) + "\",";
-    payload += "\"firmware_version\":\"v3.2.1-esp32s3-ota\",";
+    payload += "\"firmware_version\":\"v3.3.0-esp32s3-realtime\",";
     if (isoTs.length() > 0) {
       payload += "\"timestamp\":\"" + isoTs + "\",";
     }
@@ -626,7 +639,7 @@ void loop() {
     payload += "\"battery_power\":" + (isnan(snap.battP) ? "null" : String(snap.battP, 2)) + ",";
     payload += "\"battery_energy_wh\":" + (isnan(snap.battWh) ? "null" : String(snap.battWh, 2)) + ",";
     payload += "\"battery_remaining_hours\":" + (isnan(snap.battRemHours) ? "null" : String(snap.battRemHours, 1)) + ",";
-    payload += "\"power_save_mode\":" + String(powerManager.isPowerSaveActive() ? "true" : "false") + ",";
+    payload += "\"power_save_mode\":false,";
     payload += "\"signal_rssi\":" + String(rssiVal) + ",";
     payload += "\"modem_quota_mb\":" + (isnan(quotaMb) ? "null" : String(quotaMb, 0)) + ",";
     payload += "\"modem_credit_rp\":" + (isnan(creditRp) ? "null" : String(creditRp, 0)) + ",";
@@ -656,15 +669,9 @@ void loop() {
       Serial.printf("[HTTP POST] Status code: %d\n", code);
 
       if (code >= 200 && code < 300) {
-        if (resp.indexOf("\"force_power_save\":true") >= 0) {
-          remoteForcePowerSave = true;
-        } else if (resp.indexOf("\"force_power_save\":false") >= 0) {
-          remoteForcePowerSave = false;
-        }
-
         int otaIdx = resp.indexOf("\"remote_command\":\"ota_update");
         if (otaIdx >= 0) {
-          int valStart = otaIdx + 18; // panjang '"remote_command":"'
+          int valStart = otaIdx + 18;
           int valEnd = resp.indexOf("\"", valStart);
           String cmdVal = (valEnd > valStart) ? resp.substring(valStart, valEnd) : "ota_update";
           String otaUrl = String(BASE_API_URL) + "/firmware/esp32s3-latest.bin";

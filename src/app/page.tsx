@@ -225,8 +225,10 @@ export default function SmartSoilMonitoringApp() {
     fetchHardwareData();
   }, [fetchHardwareData]);
 
-  // Subscribe to Supabase Realtime tanpa re-fetch HTTP berulang (0 request tambahan setiap 2 detik!)
+  // Subscribe to Supabase Realtime + pengaman ringan anti-freeze jika WebSocket HP sempat tertidur
   useEffect(() => {
+    let lastRealtimeMs = Date.now();
+
     const channel = supabase
       .channel("soil-realtime-stream")
       .on(
@@ -239,6 +241,7 @@ export default function SmartSoilMonitoringApp() {
         (payload) => {
           const newRow = payload.new as SoilTelemetryRecord;
           if (!newRow.is_demo && newRow.device_id === DEFAULT_DEVICE_ID) {
+            lastRealtimeMs = Date.now();
             setLiveLatest(newRow);
             setLiveHistory((prev) => [...prev.slice(-119), newRow]);
             setLiveDeviceStatus((prev) => ({
@@ -280,7 +283,55 @@ export default function SmartSoilMonitoringApp() {
       )
       .subscribe();
 
+    // Fallback ringan hanya jika tab aktif & WebSocket belum menerima paket > 4 detik (mis. habis kunci layar HP)
+    const fallbackTimer = setInterval(async () => {
+      if (
+        typeof document !== "undefined" &&
+        document.visibilityState !== "visible"
+      ) {
+        return;
+      }
+      if (Date.now() - lastRealtimeMs < 4000) return;
+
+      try {
+        const res = await fetch(
+          `/api/v1/telemetry/latest?device_id=${DEFAULT_DEVICE_ID}&is_demo=false`,
+          { cache: "no-store" }
+        );
+        if (!res.ok) return;
+        const json = await res.json();
+        const latestRow = json.telemetry as SoilTelemetryRecord | null;
+        if (!latestRow) return;
+
+        setLiveLatest((prev) => {
+          if (prev?.ts === latestRow.ts) return prev;
+          setLiveHistory((h) =>
+            h[h.length - 1]?.ts === latestRow.ts
+              ? h
+              : [...h.slice(-119), latestRow]
+          );
+          return latestRow;
+        });
+        setLiveDeviceStatus((prev) => ({
+          ...prev,
+          esp32_status: "online",
+          modem_status: "connected",
+          last_seen: latestRow.ts,
+          is_stale: false,
+          sensor_ph_status:
+            latestRow.sensor_status?.ph || prev.sensor_ph_status,
+          sensor_dms_status:
+            latestRow.sensor_status?.dms || prev.sensor_dms_status,
+          sensor_temp_status:
+            latestRow.sensor_status?.temperature || prev.sensor_temp_status,
+        }));
+      } catch {
+        // Abaikan jika jaringan sementara offline
+      }
+    }, 3500);
+
     return () => {
+      clearInterval(fallbackTimer);
       supabase.removeChannel(channel);
     };
   }, []);

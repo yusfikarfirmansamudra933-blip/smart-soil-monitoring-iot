@@ -18,7 +18,6 @@ import {
   Sliders,
   Unplug,
   Volume2,
-  Zap,
 } from "lucide-react";
 import {
   DmsInterfaceMode,
@@ -371,7 +370,7 @@ export function DeviceManagementView({
           )}
         </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 text-xs">
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 text-xs">
           <button
             type="button"
             disabled={sendingRemoteCmd !== null}
@@ -406,29 +405,6 @@ export function DeviceManagementView({
               </span>
               <span className="text-[11px] text-slate-500">
                 Nolkan akumulasi Wh Panel Surya & Baterai di NVS
-              </span>
-            </div>
-          </button>
-
-          <button
-            type="button"
-            disabled={sendingRemoteCmd !== null}
-            onClick={() => handleRemoteCommand("toggle_power_save")}
-            className={`p-3.5 rounded-xl border text-left transition flex items-start gap-3 disabled:opacity-50 ${
-              cfg.force_power_save
-                ? "bg-amber-500/20 border-amber-500/50 hover:bg-amber-500/25"
-                : "bg-amber-500/10 border-amber-500/30 hover:bg-amber-500/20"
-            }`}
-          >
-            <Zap className="w-5 h-5 text-amber-600 dark:text-amber-400 shrink-0 mt-0.5" />
-            <div>
-              <span className="font-bold text-slate-900 dark:text-white block">
-                {sendingRemoteCmd === "toggle_power_save"
-                  ? "Mengubah..."
-                  : `Hemat Daya 80 MHz: ${cfg.force_power_save ? "AKTIF" : "OFF"}`}
-              </span>
-              <span className="text-[11px] text-slate-500">
-                Paksa CPU 80 MHz & WiFi Modem-Sleep saat cuaca mendung
               </span>
             </div>
           </button>
