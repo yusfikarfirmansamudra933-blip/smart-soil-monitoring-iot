@@ -134,18 +134,26 @@ export function SoilMonitoringCards({
     config.temp_max_alarm
   );
 
-  const chartData = history.slice(-18).map((item) => ({
-    time: new Date(item.ts).toLocaleTimeString("id-ID", {
-      hour: "2-digit",
-      minute: "2-digit",
-    }),
-    ph: item.soil_ph,
-    moisture: config.dms_calibrated ? item.soil_moisture : item.soil_dms_raw,
-    dmsRaw: item.soil_dms_raw,
-    temperature: item.soil_temperature,
-  }));
+  const chartData = React.useMemo(
+    () =>
+      history.slice(-20).map((item) => ({
+        time: new Date(item.ts).toLocaleTimeString("id-ID", {
+          hour: "2-digit",
+          minute: "2-digit",
+          second: "2-digit",
+        }),
+        ph: item.soil_ph,
+        moisture: config.dms_calibrated ? item.soil_moisture : item.soil_dms_raw,
+        dmsRaw: item.soil_dms_raw,
+        temperature: item.soil_temperature,
+      })),
+    [history, config.dms_calibrated]
+  );
 
-  const recentRows = [...history].reverse().slice(0, 6);
+  const recentRows = React.useMemo(
+    () => (detailedView ? [...history].reverse().slice(0, 6) : []),
+    [history, detailedView]
+  );
 
   return (
     <div className="space-y-6">
@@ -245,6 +253,7 @@ export function SoilMonitoringCards({
                     <XAxis
                       dataKey="time"
                       tick={{ fontSize: 10 }}
+                      minTickGap={24}
                       stroke="#62758f"
                     />
                     <YAxis
@@ -269,6 +278,7 @@ export function SoilMonitoringCards({
                       stroke="#3383f5"
                       strokeWidth={2}
                       fill="url(#phGrad)"
+                      isAnimationActive={false}
                     />
                   </AreaChart>
                 </ResponsiveContainer>
@@ -368,6 +378,7 @@ export function SoilMonitoringCards({
                     <XAxis
                       dataKey="time"
                       tick={{ fontSize: 10 }}
+                      minTickGap={24}
                       stroke="#62758f"
                     />
                     <YAxis
@@ -393,6 +404,7 @@ export function SoilMonitoringCards({
                       stroke="#1f66e0"
                       strokeWidth={2}
                       fill="url(#dmsGrad)"
+                      isAnimationActive={false}
                     />
                   </AreaChart>
                 </ResponsiveContainer>
@@ -505,6 +517,7 @@ export function SoilMonitoringCards({
                     <XAxis
                       dataKey="time"
                       tick={{ fontSize: 10 }}
+                      minTickGap={24}
                       stroke="#62758f"
                     />
                     <YAxis
@@ -529,6 +542,7 @@ export function SoilMonitoringCards({
                       stroke="#3383f5"
                       strokeWidth={2}
                       fill="url(#tempGrad)"
+                      isAnimationActive={false}
                     />
                   </AreaChart>
                 </ResponsiveContainer>

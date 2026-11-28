@@ -11,6 +11,10 @@ import { DEFAULT_CONFIG } from "@/lib/default-config";
 
 const DEVICE_ID_REGEX = /^[A-Za-z0-9_-]{1,32}$/;
 const rateLimitMap = new Map<string, { count: number; windowStart: number }>();
+const phFloatingGuardMap = new Map<
+  string,
+  { raw: number; ts: number; unstableHold: number }
+>();
 const RATE_LIMIT_WINDOW_MS = 60_000;
 const RATE_LIMIT_MAX_REQ = 120;
 
@@ -105,6 +109,42 @@ export async function POST(req: NextRequest) {
 
     const normalized = normalizeTelemetryPayload(body, deviceId);
 
+    // Deteksi pin ADC pH mengambang (sensor dicabut -> noise listrik 50Hz melompat liar mis. 0 <-> 2000)
+    const nowMs = Date.now();
+    if (
+      normalized.sensor_status.ph === "online" &&
+      normalized.soil_ph_raw !== null &&
+      normalized.soil_ph_raw !== undefined
+    ) {
+      const currRaw = Number(normalized.soil_ph_raw);
+      const prevGuard = phFloatingGuardMap.get(deviceId);
+      if (prevGuard && nowMs - prevGuard.ts < 15_000) {
+        const delta = Math.abs(currRaw - prevGuard.raw);
+        const nextHold =
+          delta > 450
+            ? 4
+            : prevGuard.unstableHold > 0
+            ? prevGuard.unstableHold - 1
+            : 0;
+        phFloatingGuardMap.set(deviceId, {
+          raw: currRaw,
+          ts: nowMs,
+          unstableHold: nextHold,
+        });
+        if (nextHold > 0) {
+          normalized.sensor_status.ph = "not_connected";
+          normalized.soil_ph = null;
+          normalized.soil_ph_raw = null;
+        }
+      } else {
+        phFloatingGuardMap.set(deviceId, {
+          raw: currRaw,
+          ts: nowMs,
+          unstableHold: 0,
+        });
+      }
+    }
+
     // Terapkan kalibrasi offset pH dari konfigurasi perangkat secara konsisten berdasarkan ADC mentah (atau nilai pH kiriman)
     let finalPh = normalized.soil_ph;
     const phCalOffset = Number(config.ph_cal_offset ?? 0);
@@ -117,7 +157,11 @@ export async function POST(req: NextRequest) {
       const adc10 = Number(normalized.soil_ph_raw) / 4.0;
       const computedPh = -0.0233 * adc10 + 12.698 + phCalOffset;
       finalPh = Math.min(14, Math.max(0, Number(computedPh.toFixed(2))));
-    } else if (finalPh !== null && phCalOffset !== 0) {
+    } else if (
+      normalized.sensor_status.ph === "online" &&
+      finalPh !== null &&
+      phCalOffset !== 0
+    ) {
       finalPh = Math.min(14, Math.max(0, Number((finalPh + phCalOffset).toFixed(2))));
     }
 

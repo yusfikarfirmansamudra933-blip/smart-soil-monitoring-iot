@@ -376,6 +376,7 @@ export function EnergyMonitoringView({
                   stroke="#3383f5"
                   strokeWidth={2.5}
                   fill="url(#battGrad)"
+                  isAnimationActive={false}
                 />
               </AreaChart>
             </ResponsiveContainer>

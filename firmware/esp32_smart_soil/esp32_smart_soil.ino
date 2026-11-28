@@ -607,7 +607,7 @@ void loop() {
 
     String payload = "{";
     payload += "\"device_id\":\"" + String(DEVICE_ID) + "\",";
-    payload += "\"firmware_version\":\"v3.2.0-esp32s3-ota\",";
+    payload += "\"firmware_version\":\"v3.2.1-esp32s3-ota\",";
     if (isoTs.length() > 0) {
       payload += "\"timestamp\":\"" + isoTs + "\",";
     }

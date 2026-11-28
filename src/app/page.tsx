@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useCallback, useEffect, useState } from "react";
+import dynamic from "next/dynamic";
 import {
   Activity,
   AlertTriangle,
@@ -41,12 +42,28 @@ import {
 } from "@/lib/sensor-drivers";
 import { DEFAULT_DEVICE_ID, supabase } from "@/lib/supabase";
 import { SoilMonitoringCards } from "@/components/SoilMonitoringCards";
-import { AiCropAdvisorView } from "@/components/AiCropAdvisorView";
-import { EnergyMonitoringView } from "@/components/EnergyMonitoringView";
-import { HistoryAndChartsView } from "@/components/HistoryAndChartsView";
-import { AlertsView } from "@/components/AlertsView";
-import { DeviceManagementView } from "@/components/DeviceManagementView";
-import { AboutProjectView, SettingsView } from "@/components/SettingsAndAboutView";
+
+const AiCropAdvisorView = dynamic(() =>
+  import("@/components/AiCropAdvisorView").then((m) => m.AiCropAdvisorView)
+);
+const EnergyMonitoringView = dynamic(() =>
+  import("@/components/EnergyMonitoringView").then((m) => m.EnergyMonitoringView)
+);
+const HistoryAndChartsView = dynamic(() =>
+  import("@/components/HistoryAndChartsView").then((m) => m.HistoryAndChartsView)
+);
+const AlertsView = dynamic(() =>
+  import("@/components/AlertsView").then((m) => m.AlertsView)
+);
+const DeviceManagementView = dynamic(() =>
+  import("@/components/DeviceManagementView").then((m) => m.DeviceManagementView)
+);
+const SettingsView = dynamic(() =>
+  import("@/components/SettingsAndAboutView").then((m) => m.SettingsView)
+);
+const AboutProjectView = dynamic(() =>
+  import("@/components/SettingsAndAboutView").then((m) => m.AboutProjectView)
+);
 
 interface BeforeInstallPromptEvent extends Event {
   prompt: () => Promise<void>;
@@ -86,7 +103,7 @@ export default function SmartSoilMonitoringApp() {
     device_id: DEFAULT_DEVICE_ID,
     name: "Smart Soil Station #1",
     location: "Blok A - Lahan Pertanian Utama",
-    firmware_version: "v1.2.0-esp32-4g",
+    firmware_version: "v3.2.0-esp32s3-ota",
     esp32_status: "offline",
     modem_status: "disconnected",
     signal_rssi: null,
@@ -148,17 +165,18 @@ export default function SmartSoilMonitoringApp() {
     };
   }, []);
 
-  // Fetch Real Hardware Data & Config from REST API + Supabase
+  // Fetch Real Hardware Data & Config from REST API + Supabase (hanya saat muat awal / tombol refresh / ganti rentang)
   const fetchHardwareData = useCallback(async () => {
     setLoadingData(true);
     try {
+      const historyLimit = activeNav === "history" ? 200 : 60;
       const [latestRes, historyRes, statusRes, configRes, alertsRes] =
         await Promise.all([
           fetch(
             `/api/v1/telemetry/latest?device_id=${DEFAULT_DEVICE_ID}&is_demo=false`
           ),
           fetch(
-            `/api/v1/telemetry/history?device_id=${DEFAULT_DEVICE_ID}&range=${selectedRange}&is_demo=false`
+            `/api/v1/telemetry/history?device_id=${DEFAULT_DEVICE_ID}&range=${selectedRange}&limit=${historyLimit}&is_demo=false`
           ),
           fetch(`/api/v1/device/status?device_id=${DEFAULT_DEVICE_ID}`),
           fetch(`/api/v1/device/config?device_id=${DEFAULT_DEVICE_ID}`),
@@ -168,12 +186,11 @@ export default function SmartSoilMonitoringApp() {
             .eq("device_id", DEFAULT_DEVICE_ID)
             .eq("is_demo", false)
             .order("ts", { ascending: false })
-            .limit(30),
+            .limit(20),
         ]);
 
       if (latestRes.ok) {
         const latestJson = await latestRes.json();
-        // Do not show stale old data as live if device is offline/stale
         setLiveLatest(latestJson.telemetry || null);
       }
 
@@ -202,13 +219,13 @@ export default function SmartSoilMonitoringApp() {
     } finally {
       setLoadingData(false);
     }
-  }, [selectedRange]);
+  }, [selectedRange, activeNav]);
 
   useEffect(() => {
     fetchHardwareData();
   }, [fetchHardwareData]);
 
-  // Subscribe to Supabase Realtime for instant hardware telemetry updates
+  // Subscribe to Supabase Realtime tanpa re-fetch HTTP berulang (0 request tambahan setiap 2 detik!)
   useEffect(() => {
     const channel = supabase
       .channel("soil-realtime-stream")
@@ -223,19 +240,42 @@ export default function SmartSoilMonitoringApp() {
           const newRow = payload.new as SoilTelemetryRecord;
           if (!newRow.is_demo && newRow.device_id === DEFAULT_DEVICE_ID) {
             setLiveLatest(newRow);
-            setLiveHistory((prev) => [...prev.slice(-499), newRow]);
+            setLiveHistory((prev) => [...prev.slice(-119), newRow]);
+            setLiveDeviceStatus((prev) => ({
+              ...prev,
+              esp32_status: "online",
+              modem_status: "connected",
+              last_seen: newRow.ts,
+              is_stale: false,
+              sensor_ph_status:
+                newRow.sensor_status?.ph || prev.sensor_ph_status,
+              sensor_dms_status:
+                newRow.sensor_status?.dms || prev.sensor_dms_status,
+              sensor_temp_status:
+                newRow.sensor_status?.temperature || prev.sensor_temp_status,
+              modem_quota_mb: newRow.modem_quota_mb ?? prev.modem_quota_mb,
+              modem_credit_rp: newRow.modem_credit_rp ?? prev.modem_credit_rp,
+              buzzer_active: newRow.buzzer_active ?? prev.buzzer_active,
+            }));
           }
         }
       )
       .on(
         "postgres_changes",
         {
-          event: "*",
+          event: "UPDATE",
           schema: "public",
           table: "soil_devices",
         },
-        () => {
-          fetchHardwareData();
+        (payload) => {
+          const d = payload.new as Partial<SoilDeviceStatus>;
+          if (d.device_id === DEFAULT_DEVICE_ID) {
+            setLiveDeviceStatus((prev) => ({
+              ...prev,
+              ...d,
+              is_stale: false,
+            }));
+          }
         }
       )
       .subscribe();
@@ -243,7 +283,7 @@ export default function SmartSoilMonitoringApp() {
     return () => {
       supabase.removeChannel(channel);
     };
-  }, [fetchHardwareData]);
+  }, []);
 
   // Active Live Hardware Data
   const activeHistory = liveHistory;

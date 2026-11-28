@@ -423,8 +423,9 @@ export function HistoryAndChartsView({
                       dataKey="soil_ph"
                       name="Soil pH"
                       stroke="#3383f5"
-                      strokeWidth={2.5}
-                      dot={{ r: 2 }}
+                      strokeWidth={2}
+                      dot={false}
+                      isAnimationActive={false}
                     />
                   </LineChart>
                 </ResponsiveContainer>
@@ -482,8 +483,9 @@ export function HistoryAndChartsView({
                           : "Soil DMS (Raw)"
                       }
                       stroke="#1f66e0"
-                      strokeWidth={2.5}
-                      dot={{ r: 2 }}
+                      strokeWidth={2}
+                      dot={false}
+                      isAnimationActive={false}
                     />
                   </LineChart>
                 </ResponsiveContainer>
@@ -539,8 +541,9 @@ export function HistoryAndChartsView({
                       dataKey="soil_temperature"
                       name="Soil Temperature (°C)"
                       stroke="#59a2fb"
-                      strokeWidth={2.5}
-                      dot={{ r: 2 }}
+                      strokeWidth={2}
+                      dot={false}
+                      isAnimationActive={false}
                     />
                   </LineChart>
                 </ResponsiveContainer>
@@ -596,8 +599,9 @@ export function HistoryAndChartsView({
                       dataKey="battery_voltage"
                       name="Battery Voltage (V)"
                       stroke="#3383f5"
-                      strokeWidth={2.5}
-                      dot={{ r: 2 }}
+                      strokeWidth={2}
+                      dot={false}
+                      isAnimationActive={false}
                     />
                   </LineChart>
                 </ResponsiveContainer>

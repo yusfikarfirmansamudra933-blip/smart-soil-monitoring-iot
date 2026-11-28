@@ -16,14 +16,17 @@ export async function GET(req: NextRequest) {
   const isDemo = searchParams.get("is_demo") === "true";
   const startDate = searchParams.get("start");
   const endDate = searchParams.get("end");
-  const limit = Math.min(Number(searchParams.get("limit") || 500), 1000);
+  const limit = Math.min(Number(searchParams.get("limit") || 120), 500);
 
+  // Ambil data TERBARU terlebih dahulu (descending), lalu balik urutannya agar grafik selalu menampilkan waktu terkini
   let query = supabase
     .from("soil_telemetry")
-    .select("*")
+    .select(
+      "id,device_id,ts,soil_ph,soil_ph_raw,soil_moisture,soil_dms_raw,soil_temperature,hardware_temperature,battery_voltage,battery_current,battery_power,battery_energy_wh,battery_remaining_hours,solar_voltage,solar_current,solar_power,solar_energy_wh,power_save_mode,charging_status,modem_quota_mb,modem_credit_rp,buzzer_active,sensor_status,is_demo"
+    )
     .eq("device_id", deviceId)
     .eq("is_demo", isDemo)
-    .order("ts", { ascending: true })
+    .order("ts", { ascending: false })
     .limit(limit);
 
   if (startDate && !Number.isNaN(Date.parse(startDate))) {
@@ -47,11 +50,13 @@ export async function GET(req: NextRequest) {
     );
   }
 
+  const chronological = data ? [...data].reverse() : [];
+
   return NextResponse.json({
     device_id: deviceId,
     range,
     is_demo: isDemo,
-    count: data?.length || 0,
-    records: data || [],
+    count: chronological.length,
+    records: chronological,
   });
 }
