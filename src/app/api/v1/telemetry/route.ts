@@ -105,6 +105,22 @@ export async function POST(req: NextRequest) {
 
     const normalized = normalizeTelemetryPayload(body, deviceId);
 
+    // Terapkan kalibrasi offset pH dari konfigurasi perangkat secara konsisten berdasarkan ADC mentah (atau nilai pH kiriman)
+    let finalPh = normalized.soil_ph;
+    const phCalOffset = Number(config.ph_cal_offset ?? 0);
+    if (
+      normalized.sensor_status.ph === "online" &&
+      normalized.soil_ph_raw !== null &&
+      normalized.soil_ph_raw !== undefined &&
+      config.ph_interface_mode === "analog_adc"
+    ) {
+      const adc10 = Number(normalized.soil_ph_raw) / 4.0;
+      const computedPh = -0.0233 * adc10 + 12.698 + phCalOffset;
+      finalPh = Math.min(14, Math.max(0, Number(computedPh.toFixed(2))));
+    } else if (finalPh !== null && phCalOffset !== 0) {
+      finalPh = Math.min(14, Math.max(0, Number((finalPh + phCalOffset).toFixed(2))));
+    }
+
     // If DMS raw is provided and soil_moisture is null, compute calibrated % if enabled
     let finalMoisture = normalized.soil_moisture;
     if (
@@ -144,7 +160,7 @@ export async function POST(req: NextRequest) {
       .insert({
         device_id: deviceId,
         ts: normalized.ts,
-        soil_ph: normalized.soil_ph,
+        soil_ph: finalPh,
         soil_ph_raw: normalized.soil_ph_raw,
         soil_moisture: finalMoisture,
         soil_dms_raw: normalized.soil_dms_raw,
@@ -221,28 +237,28 @@ export async function POST(req: NextRequest) {
     }> = [];
 
     if (
-      normalized.soil_ph !== null &&
+      finalPh !== null &&
       normalized.sensor_status.ph === "online"
     ) {
-      if (normalized.soil_ph < config.ph_min_alarm) {
+      if (finalPh < config.ph_min_alarm) {
         alertsToInsert.push({
           device_id: deviceId,
           alert_type: "ph_low",
           severity: "warning",
           title: "pH Tanah Terlalu Rendah (Asam)",
-          message: `Nilai pH tanah (${normalized.soil_ph}) berada di bawah batas minimum (${config.ph_min_alarm}).`,
-          metric_value: `${normalized.soil_ph} pH`,
+          message: `Nilai pH tanah (${finalPh}) berada di bawah batas minimum (${config.ph_min_alarm}).`,
+          metric_value: `${finalPh} pH`,
           threshold_value: `< ${config.ph_min_alarm} pH`,
           is_demo: normalized.is_demo,
         });
-      } else if (normalized.soil_ph > config.ph_max_alarm) {
+      } else if (finalPh > config.ph_max_alarm) {
         alertsToInsert.push({
           device_id: deviceId,
           alert_type: "ph_high",
           severity: "warning",
           title: "pH Tanah Terlalu Tinggi (Basa)",
-          message: `Nilai pH tanah (${normalized.soil_ph}) melebihi batas maksimum (${config.ph_max_alarm}).`,
-          metric_value: `${normalized.soil_ph} pH`,
+          message: `Nilai pH tanah (${finalPh}) melebihi batas maksimum (${config.ph_max_alarm}).`,
+          metric_value: `${finalPh} pH`,
           threshold_value: `> ${config.ph_max_alarm} pH`,
           is_demo: normalized.is_demo,
         });

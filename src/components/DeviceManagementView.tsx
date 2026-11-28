@@ -80,6 +80,7 @@ export function DeviceManagementView({
       | "reboot_mcu"
       | "toggle_power_save"
       | "ota_update"
+      | "calibrate_ph_neutral"
   ) => {
     setSendingRemoteCmd(command);
     setRemoteCmdStatus(null);
@@ -100,6 +101,9 @@ export function DeviceManagementView({
         setRemoteCmdStatus(json.message || "Perintah jarak jauh berhasil dikirim.");
         if (typeof json.force_power_save === "boolean") {
           setCfg((prev) => ({ ...prev, force_power_save: json.force_power_save }));
+        }
+        if (typeof json.ph_cal_offset === "number") {
+          setCfg((prev) => ({ ...prev, ph_cal_offset: json.ph_cal_offset }));
         }
         onTriggerRefresh();
       } else {
@@ -659,46 +663,78 @@ export function DeviceManagementView({
               </div>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 pt-2">
-              <div className="flex items-center gap-2 pt-4">
-                <input
-                  id="dms_cal_chk"
-                  type="checkbox"
-                  checked={cfg.dms_calibrated}
-                  onChange={(e) =>
-                    setCfg({ ...cfg, dms_calibrated: e.target.checked })
-                  }
-                  className="w-4 h-4 accent-emerald-600 rounded"
-                />
-                <label htmlFor="dms_cal_chk" className="font-semibold">
-                  Aktifkan Konversi % DMS
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-2">
+              <div className="p-3.5 rounded-xl bg-emerald-500/10 border border-emerald-500/30 space-y-2">
+                <label className="block font-bold text-slate-900 dark:text-white">
+                  Offset Kalibrasi pH Tanah
                 </label>
+                <div className="flex items-center gap-2">
+                  <input
+                    type="number"
+                    step="0.01"
+                    value={cfg.ph_cal_offset ?? 0}
+                    onChange={(e) =>
+                      setCfg({ ...cfg, ph_cal_offset: Number(e.target.value) })
+                    }
+                    className="w-28 px-3 py-2 rounded-lg bg-white dark:bg-slate-900 border border-emerald-500/30 font-mono"
+                  />
+                  <button
+                    type="button"
+                    disabled={sendingRemoteCmd !== null}
+                    onClick={() => handleRemoteCommand("calibrate_ph_neutral")}
+                    className="flex-1 px-3 py-2 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white font-bold transition disabled:opacity-50"
+                  >
+                    {sendingRemoteCmd === "calibrate_ph_neutral"
+                      ? "Mengkalibrasi..."
+                      : "Set Tanah Ini = Netral (pH 7.0)"}
+                  </button>
+                </div>
+                <p className="text-[11px] text-slate-500">
+                  Tancapkan probe ke tanah subur/netral lembap, tunggu 1 menit, lalu klik tombol hijau untuk otomatis menyetel ke pH 7.00.
+                </p>
               </div>
-              <div>
-                <label className="block font-semibold mb-1">
-                  DMS Nilai Mentah Kering (0%)
-                </label>
-                <input
-                  type="number"
-                  value={cfg.dms_raw_dry}
-                  onChange={(e) =>
-                    setCfg({ ...cfg, dms_raw_dry: Number(e.target.value) })
-                  }
-                  className="w-full px-3 py-2 rounded-lg bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700"
-                />
-              </div>
-              <div>
-                <label className="block font-semibold mb-1">
-                  DMS Nilai Mentah Basah (100%)
-                </label>
-                <input
-                  type="number"
-                  value={cfg.dms_raw_wet}
-                  onChange={(e) =>
-                    setCfg({ ...cfg, dms_raw_wet: Number(e.target.value) })
-                  }
-                  className="w-full px-3 py-2 rounded-lg bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700"
-                />
+
+              <div className="grid grid-cols-2 gap-3">
+                <div className="col-span-2 flex items-center gap-2">
+                  <input
+                    id="dms_cal_chk"
+                    type="checkbox"
+                    checked={cfg.dms_calibrated}
+                    onChange={(e) =>
+                      setCfg({ ...cfg, dms_calibrated: e.target.checked })
+                    }
+                    className="w-4 h-4 accent-emerald-600 rounded"
+                  />
+                  <label htmlFor="dms_cal_chk" className="font-semibold">
+                    Aktifkan Konversi % Kelembapan Tanah
+                  </label>
+                </div>
+                <div>
+                  <label className="block font-semibold mb-1">
+                    ADC Kering (0%)
+                  </label>
+                  <input
+                    type="number"
+                    value={cfg.dms_raw_dry}
+                    onChange={(e) =>
+                      setCfg({ ...cfg, dms_raw_dry: Number(e.target.value) })
+                    }
+                    className="w-full px-3 py-2 rounded-lg bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700"
+                  />
+                </div>
+                <div>
+                  <label className="block font-semibold mb-1">
+                    ADC Basah (100%)
+                  </label>
+                  <input
+                    type="number"
+                    value={cfg.dms_raw_wet}
+                    onChange={(e) =>
+                      setCfg({ ...cfg, dms_raw_wet: Number(e.target.value) })
+                    }
+                    className="w-full px-3 py-2 rounded-lg bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700"
+                  />
+                </div>
               </div>
             </div>
           </div>
